@@ -1,0 +1,6 @@
+{
+  "npmName": "localchat-api-client",
+  "npmVersion": "1.0.1",
+  "modelPropertyNaming": "original",
+  "withInterfaces": false
+}

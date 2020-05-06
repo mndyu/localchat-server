@@ -1,0 +1,367 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: localchat
+  description: localchat
+basePath: /api/v1
+paths:
+  /users:
+    get:
+      summary: ユーザ一覧
+      parameters:
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/Offset"
+      responses:
+        "200":
+          description: ユーザ一覧返信
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/User"
+    post:
+      summary: ユーザ
+      parameters:
+        - in: body
+          name: User
+          description: User
+          schema:
+            $ref: "#/definitions/User"
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/User"
+  /users/{user_id}:
+    parameters:
+      - $ref: "#/parameters/UserId"
+    get:
+      summary: １ユーザ取得
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/User"
+    put:
+      summary: １ユーザ更新
+      parameters:
+        - in: body
+          name: User
+          description: User
+          schema:
+            $ref: "#/definitions/User"
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/User"
+    delete:
+      summary: １ユーザ削除
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/User"
+  /users/{user_id}/messages:
+    parameters:
+      - $ref: "#/parameters/UserId"
+    get:
+      summary: ユーザのメッセージ一覧取得
+      responses:
+        "200":
+          description: ユーザメッセージ一覧取得
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/User"
+  /users/{user_id}/groups:
+    parameters:
+      - $ref: "#/parameters/UserId"
+    post:
+      summary: ユーザのグループ参加
+      parameters:
+        - in: body
+          name: group
+          description: group
+          schema:
+            $ref: "#/definitions/Group"
+      responses:
+        "200":
+          description: グループ参加
+          schema:
+            $ref: "#/definitions/User"
+    get:
+      summary: ？？
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/User"
+  /messages:
+    post:
+      summary: メッセージの作成
+      parameters:
+        - in: body
+          name: Message
+          description: Message
+          schema:
+            $ref: "#/definitions/Message"
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/Message"
+    get:
+      summary: メッセージ一覧取得
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Message"
+  /messages/{message_id}:
+    parameters:
+      - $ref: "#/parameters/MessageId"
+    get:
+      summary: メッセージの取得
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/Message"
+    put:
+      summary: メッセージの更新
+      parameters:
+        - in: body
+          name: message
+          description: message
+          schema:
+            $ref: "#/definitions/Message"
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/Message"
+    delete:
+      summary: メッセージの削除
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/Message"
+  /groups:
+    post:
+      summary: グループ作成
+      parameters:
+        - in: body
+          name: group
+          description: group
+          schema:
+            $ref: "#/definitions/Group"
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/User"
+    get:
+      summary: グループ一覧取得
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/User"
+  /groups/{group_id}:
+    parameters:
+      - $ref: "#/parameters/GroupId"
+    get:
+      summary: グループ取得
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/Group"
+    put:
+      summary: グループ更新
+      parameters:
+        - in: body
+          name: group
+          description: group
+          schema:
+            $ref: "#/definitions/Group"
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/Group"
+    delete:
+      summary: グループ削除
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/Group"
+  /groups/{group_id}/members:
+    parameters:
+      - $ref: "#/parameters/GroupId"
+    get:
+      summary: グループ内メンバー一覧取得
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Group"
+  /groups/{group_id}/members/{user_id}:
+    parameters:
+      - $ref: "#/parameters/GroupId"
+      - $ref: "#/parameters/UserId"
+    delete:
+      summary: グループ内のメンバー削除
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/User"
+  /groups/{group_id}/messages:
+    parameters:
+      - $ref: "#/parameters/GroupId"
+    post:
+      summary: group のメッセージ一送信
+      parameters:
+        - in: body
+          name: Message
+          description: Message
+          schema:
+            $ref: "#/definitions/MessagePost"
+      responses:
+        "200":
+          description: ユーザにメッセージ送信
+          schema:
+            $ref: "#/definitions/Message"
+parameters:
+  Limit:
+    in: query
+    name: limit
+    description: ページの要素数
+    type: integer
+    format: int32
+  Offset:
+    in: query
+    name: offset
+    description: ページ開始位置
+    type: integer
+    format: int32
+  From:
+    in: query
+    name: from
+    description: 期間絞り込み開始日時
+    type: string
+    format: date-time
+  To:
+    in: query
+    name: to
+    description: 期間絞り込み終了日時
+    type: string
+    format: date-time
+  UserId:
+    in: path
+    name: user_id
+    description: ユーザID
+    required: true
+    type: integer
+    format: int32
+  MessageId:
+    in: path
+    name: message_id
+    description: メッセージID
+    required: true
+    type: integer
+    format: int32
+  GroupId:
+    in: path
+    name: group_id
+    description: グループID
+    required: true
+    type: integer
+    format: int32
+  ChannelId:
+    in: path
+    name: channel_id
+    description: チャンネルID
+    required: true
+    type: integer
+    format: int32
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+      name:
+        type: string
+      ip_address:
+        type: string
+      pc_name:
+        type: string
+  MessagePost:
+    type: object
+    properties:
+      text:
+        type: string
+  Message:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+      author:
+        type: integer
+        format: int32
+      channel:
+        type: integer
+        format: int32
+      text:
+        type: integer
+        format: int32
+  Group:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+      name:
+        type: string
+  AccessGroup:
+    type: "object"
+    properties:
+      gid:
+        type: "integer"
+        format: "int32"
+      uid:
+        type: "integer"
+        format: "int32"
+  Channel:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+      name:
+        type: string
+      group:
+        type: integer
+        format: int32
+  GeneralError:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string

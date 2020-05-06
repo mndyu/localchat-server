@@ -1,0 +1,24 @@
+version: '2.0'
+services:
+  # mysql:
+  #   build: ./mysql
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #      - ./mysql/.data/db:/var/lib/mysql
+  #   env_file: ./mysql/.env
+  # postgres:
+  #   build: ./postgres
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - ./postgres/pgdata:/var/lib/postgresql/data
+  #   env_file: ./postgres/.env
+  api-server:
+    build: .
+    env_file: dev-imdb.env
+    ports:
+      - "1324:1324"
+    # depends_on:
+    #   - postgres
+    # network_mode: "host"
