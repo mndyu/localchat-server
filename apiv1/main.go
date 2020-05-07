@@ -87,6 +87,7 @@ replcae: // $3 $1 $2\nfunc $3(context *Context, c echo.Context) error {
 // SetupRoutes setups routes
 func SetupRoutes(g *echo.Group, db *gorm.DB) {
 	c := Context{db}
+	g.GET("/profile", c.bind(GetProfile))
 	g.POST("/users", c.bind(PostUsers))
 	g.GET("/users", c.bind(GetUsers))
 	g.PUT("/users/:id", c.bind(PutUserByID))
@@ -94,9 +95,7 @@ func SetupRoutes(g *echo.Group, db *gorm.DB) {
 	g.DELETE("/users/:id", c.bind(DeleteUsersByID))
 	// g.POST("/users/:id/messages", c.bind(PostUserMessages))
 	g.GET("/users/:id/messages", c.bind(GetUserMessages))
-	g.POST("/users/:id/groups", c.bind(PostUserGroups))
 	g.GET("/users/:id/groups", c.bind(GetUserGroups))
-	g.POST("/users/:id/channels", c.bind(PostUserChannels))
 	g.GET("/users/:id/channels", c.bind(GetUserChannels))
 
 	g.POST("/messages", c.bind(PostMessages))
@@ -110,6 +109,7 @@ func SetupRoutes(g *echo.Group, db *gorm.DB) {
 	g.GET("/groups/:id", c.bind(GetGroupByID))
 	g.PUT("/groups/:id", c.bind(PutGroupByID))
 	g.DELETE("/groups/:id", c.bind(DeleteGroupByID))
+	g.POST("/groups/:id/members", c.bind(PostGroupMembers))
 	g.GET("/groups/:id/members", c.bind(GetGroupMembers))
 	g.DELETE("/groups/:id/members/:id", c.bind(DeleteGroupMemberByID))
 	g.GET("/groups/:id/channels", c.bind(GetGroupChannels))

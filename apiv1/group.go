@@ -16,6 +16,10 @@ type groupResultJson struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }
+type groupMemberPostJson struct {
+	UserID uint `json:"user_id"`
+	Myself bool `json:"myself"`
+}
 
 var (
 	groupPostJsonFields   = []string{"Name"}
@@ -150,6 +154,47 @@ func DeleteGroupByID(context *Context, c echo.Context) error {
 		Name: group.Name,
 	}
 	return c.JSON(http.StatusOK, jsonData)
+}
+
+// PostGroupMembers GET /groups/:id/members
+func PostGroupMembers(context *Context, c echo.Context) error {
+	db := context.DB
+
+	// input
+	var postData groupMemberPostJson
+	if err := c.Bind(&postData); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request body")
+	}
+
+	// db
+	item, err := getGroupById(db, c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	if item.Members == nil {
+		item.Members = []*database.User{}
+	}
+	var userID uint
+	if postData.Myself {
+		clientUser, err := getClientUser(context, c)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("unknown IP address: %s", c.RealIP()))
+		}
+		userID = clientUser.ID
+	} else {
+		userID = postData.UserID
+	}
+	var newMember database.User
+	if err := db.First(&newMember, userID).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found: %d, %v", postData.UserID, postData.Myself))
+	}
+	item.Members = append(item.Members, &newMember)
+	if err := db.Save(&item).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "failed updating group")
+	}
+
+	// output
+	return c.JSON(http.StatusOK, postData)
 }
 
 // GetGroupMembers GET /groups/:id/members

@@ -7,6 +7,22 @@ import (
 	"github.com/mndyu/localchat-server/database"
 )
 
+type channelPostJson struct {
+	Name    string `json:"name"`
+	GroupID uint   `json:"group_id"`
+}
+
+type channelResultJson struct {
+	ID      uint   `json:"id"`
+	Name    string `json:"name"`
+	GroupID uint   `json:"group_id"`
+}
+
+var (
+	channelPostJsonFields   = []string{"Name", "GroupID"}
+	channelResultJsonFields = []string{"ID", "Name", "GroupID"}
+)
+
 // PostChannels POST /channels
 func PostChannels(context *Context, c echo.Context) error {
 	// db := context.DB
@@ -38,6 +54,28 @@ func GetChannelByID(context *Context, c echo.Context) error {
 // DeleteChannelByID DELETE /channels/:id
 func DeleteChannelByID(context *Context, c echo.Context) error {
 	// db := context.DB
+	return nil
+}
+
+// PostChannelMembers POST /channels/:id/members
+func PostChannelMembers(context *Context, c echo.Context) error {
+	// db := context.DB
+	// user, err := getUserById(db, c)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	// }
+
+	// if user.Channels == nil {
+	// 	user.Channels = []*database.Channels{}
+	// }
+
+	// user.Channels = append(user.Channels, )
+
+	// var channels []database.Channel
+	// if err := db.Model(&user).Related(&channels).Error; err != nil {
+	// 	return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	// }
+	// return c.JSON(http.StatusOK, channels)
 	return nil
 }
 

@@ -3,7 +3,10 @@
 
 ## 実行
 ```
+# SQLite3
 ./dev-imdb.sh
+
+# Postgres (途中)
 ./dev-postgres.sh
 ```
 

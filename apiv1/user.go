@@ -44,6 +44,26 @@ func getUserById(db *gorm.DB, c echo.Context) (database.User, error) {
 	return user, nil
 }
 
+// GetProfile GET /profile
+func GetProfile(context *Context, c echo.Context) error {
+	// db := context.DB
+
+	// db
+	clientUser, err := getClientUser(context, c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found for IP address (%s)", c.RealIP()))
+	}
+
+	// output
+	jsonData := userResultJson{
+		ID:        clientUser.ID,
+		Name:      clientUser.Name,
+		IPAddress: clientUser.IPAddress,
+		PCName:    clientUser.PCName,
+	}
+	return c.JSON(http.StatusOK, jsonData)
+}
+
 // PostUsers POST /users
 func PostUsers(context *Context, c echo.Context) error {
 	db := context.DB
@@ -179,74 +199,82 @@ func DeleteUsersByID(context *Context, c echo.Context) error {
 	return c.JSON(http.StatusOK, jsonData)
 }
 
-// PostUserMessages POST /users/:id/messages
-func PostUserMessages(context *Context, c echo.Context) error {
-	return nil
-}
-
 // GetUserMessages GET /users/:id/messages
 func GetUserMessages(context *Context, c echo.Context) error {
 	db := context.DB
-	var msgs []database.Message
-	id := c.Param("id")
-	if db.Find(&msgs, id).Error != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "message not found")
-	}
-	return c.JSON(http.StatusOK, msgs)
-}
 
-// PostUserGroups POST /users/:id/groups
-func PostUserGroups(context *Context, c echo.Context) error {
-	// db := context.DB
-	return nil
+	// db
+	user, err := getUserById(db, c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	var msgs []database.Message
+	if err := db.Model(&user).Related(&msgs, "Messages").Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	// output
+	jsonData := []messageResultJson{}
+	for _, u := range msgs {
+		jd := messageResultJson{
+			ID:        u.ID,
+			Text:      u.Text,
+			UserID:    u.UserID,
+			ChannelID: u.ChannelID,
+		}
+		jsonData = append(jsonData, jd)
+	}
+	return c.JSON(http.StatusOK, jsonData)
 }
 
 // GetUserGroups GET /users/:id/groups
 func GetUserGroups(context *Context, c echo.Context) error {
 	db := context.DB
+
+	// db
 	user, err := getUserById(db, c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 	var groups []database.Group
-	if err := db.Model(&user).Related(&groups).Error; err != nil {
+	if err := db.Model(&user).Related(&groups, "Groups").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	return c.JSON(http.StatusOK, groups)
-}
 
-// PostUserChannels POST /users/:id/channels
-func PostUserChannels(context *Context, c echo.Context) error {
-	// db := context.DB
-	// user, err := getUserById(db, c)
-	// if err != nil {
-	// 	return echo.NewHTTPError(http.StatusNotFound, err.Error())
-	// }
-
-	// if user.Channels == nil {
-	// 	user.Channels = []*database.Channels{}
-	// }
-
-	// user.Channels = append(user.Channels, )
-
-	// var channels []database.Channel
-	// if err := db.Model(&user).Related(&channels).Error; err != nil {
-	// 	return echo.NewHTTPError(http.StatusNotFound, err.Error())
-	// }
-	// return c.JSON(http.StatusOK, channels)
-	return nil
+	// output
+	jsonData := []groupResultJson{}
+	for _, u := range groups {
+		jd := groupResultJson{
+			ID:   u.ID,
+			Name: u.Name,
+		}
+		jsonData = append(jsonData, jd)
+	}
+	return c.JSON(http.StatusOK, jsonData)
 }
 
 // GetUserChannels GET /users/:id/channels
 func GetUserChannels(context *Context, c echo.Context) error {
 	db := context.DB
+
+	// db
 	user, err := getUserById(db, c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 	var channels []database.Channel
-	if err := db.Model(&user).Related(&channels).Error; err != nil {
+	if err := db.Model(&user).Related(&channels, "Channels").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	return c.JSON(http.StatusOK, channels)
+
+	// output
+	jsonData := []channelResultJson{}
+	for _, u := range channels {
+		jd := channelResultJson{
+			ID:   u.ID,
+			Name: u.Name,
+		}
+		jsonData = append(jsonData, jd)
+	}
+	return c.JSON(http.StatusOK, jsonData)
 }

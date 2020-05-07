@@ -5,6 +5,14 @@ info:
   description: localchat
 basePath: /api/v1
 paths:
+  /profile:
+    get:
+      summary: 自分のユーザ表示
+      responses:
+        "200":
+          description: ユーザ返信
+          schema:
+            $ref: "#/definitions/User"  
   /users:
     get:
       summary: ユーザ一覧
@@ -76,19 +84,6 @@ paths:
   /users/{user_id}/groups:
     parameters:
       - $ref: "#/parameters/UserId"
-    post:
-      summary: ユーザのグループ参加
-      parameters:
-        - in: body
-          name: group
-          description: group
-          schema:
-            $ref: "#/definitions/Group"
-      responses:
-        "200":
-          description: グループ参加
-          schema:
-            $ref: "#/definitions/User"
     get:
       summary: ？？
       responses:
@@ -207,6 +202,19 @@ paths:
   /groups/{group_id}/members:
     parameters:
       - $ref: "#/parameters/GroupId"
+    post:
+      summary: グループ参加
+      parameters:
+        - in: body
+          name: group
+          description: group
+          schema:
+            $ref: "#/definitions/GroupJoin"
+      responses:
+        "200":
+          description: 参加した情報
+          schema:
+            $ref: "#/definitions/GroupJoin"
     get:
       summary: グループ内メンバー一覧取得
       responses:
@@ -309,11 +317,6 @@ definitions:
         type: string
       pc_name:
         type: string
-  MessagePost:
-    type: object
-    properties:
-      text:
-        type: string
   Message:
     type: object
     properties:
@@ -329,6 +332,11 @@ definitions:
       text:
         type: integer
         format: int32
+  MessagePost:
+    type: object
+    properties:
+      text:
+        type: string
   Group:
     type: object
     properties:
@@ -337,6 +345,14 @@ definitions:
         format: int32
       name:
         type: string
+  GroupJoin:
+    type: object
+    properties:
+      user_id:
+        type: integer
+        format: int32
+      myself:
+        type: boolean
   AccessGroup:
     type: "object"
     properties:

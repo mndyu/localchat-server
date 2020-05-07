@@ -20,12 +20,12 @@ type Tee struct {
 type User struct {
 	gorm.Model
 	Name         string     `json:"name"`
+	IPAddress    string     `json:"ip_address"`
+	PCName       string     `json:"pc_name"`
 	Messages     []Message  `json:"messages"`
 	ReadMessages []*Message `json:"read_messages" gorm:"many2many:user_read_messages;"`
 	Groups       []*Group   `json:"groups" gorm:"many2many:user_groups;"`
 	Channels     []*Channel `json:"channels" gorm:"many2many:user_channels;"`
-	IPAddress    string     `json:"ip_address"`
-	PCName       string     `json:"pc_name"`
 }
 type Message struct {
 	gorm.Model
