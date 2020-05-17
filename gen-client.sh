@@ -8,6 +8,7 @@
 
 # gen (v3 to v2)
 npm install api-spec-converter &&
+npm audit fix &&
 npx api-spec-converter --from=openapi_3 --to=swagger_2 --syntax=json openapi.yaml > openapi.json &&
 docker run --rm -v ${PWD}:/local swaggerapi/swagger-codegen-cli generate -c /local/gen-client-config.json -i /local/openapi.json -l typescript-fetch -o /local/gen-client &&
 
