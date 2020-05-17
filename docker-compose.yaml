@@ -1,4 +1,11 @@
-version: '2.0'
+version: '3.7'
+networks:
+  app_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.12.0/24"
+        - subnet: "2001:3984:3989::/64"
 services:
   # mysql:
   #   build: ./mysql
@@ -7,18 +14,41 @@ services:
   #   volumes:
   #      - ./mysql/.data/db:/var/lib/mysql
   #   env_file: ./mysql/.env
-  # postgres:
-  #   build: ./postgres
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - ./postgres/pgdata:/var/lib/postgresql/data
-  #   env_file: ./postgres/.env
-  api-server:
-    build: .
-    env_file: dev-imdb.env
+  postgres:
+    build: ./postgres
     ports:
-      - "1324:1324"
-    # depends_on:
-    #   - postgres
-    # network_mode: "host"
+      - "5432:5432"
+    volumes:
+      - ./postgres/pgdata:/var/lib/postgresql/data
+    env_file: ./postgres/.env
+    networks:
+      - app_net
+  minio:
+    image: minio/minio:latest
+    # volumes:
+    #   - ./storage/data:/data
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    # command: server http://minio{1...4}/data{1...2}
+    command: server /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+  # api-server:
+  #   build: .
+  #   depends_on:
+  #     - postgres
+  #   env_file: .env
+  #   # env_file: dev-imdb.env
+  #   ports:
+  #     - "1323:1323"
+  #   # network_mode: host
+  #   networks:
+  #     app_net:
+  #       ipv4_address: 172.16.12.242
+  #       ipv6_address: 2001:3984:3989::10

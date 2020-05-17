@@ -1,0 +1,17 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Postgres",
+      "type": "shell",
+      "command": "docker stop postgres-1 &> /dev/null; go vet ./cmd && docker run --rm -d --name postgres-1 --network host --env-file postgres/.env -v postgres/pgdata:/var/lib/postgresql/data postgres:12-alpine"
+    },
+    {
+      "label": "Stop Postgres",
+      "type": "shell",
+      "command": "docker stop postgres"
+    }
+  ]
+}

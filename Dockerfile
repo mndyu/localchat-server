@@ -21,4 +21,4 @@ RUN go install ./${app}
 ENTRYPOINT /go/bin/${app}
 
 # Document that the service listens on port 8080.
-EXPOSE 1324
+EXPOSE 1323
