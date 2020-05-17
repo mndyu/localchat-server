@@ -19,14 +19,15 @@ docker run --rm -v ${PWD}:/local swaggerapi/swagger-codegen-cli generate -c /loc
 
 
 # build
+mkdir gen-client &&
 cd gen-client &&
 npm install &&
 npm audit fix &&
 npm run build &&
 
 # git
-git init 
-git remote add origin git@github.com:mndyu/localchat-server.git
+git init &&
+git remote add origin git@github.com:mndyu/localchat-api-client.git || true &&
 git add . &&
 git commit -m "update" &&
 git push --set-upstream origin master &&

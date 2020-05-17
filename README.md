@@ -30,6 +30,7 @@ npm update localchat-api-client
 
 ## client document 生成
 ```
+// TODO
 ```
 
 ## client 例
