@@ -1,10 +1,29 @@
+# TODO
+/TODO.md
+
+
 # db
 pgdata
+
+# minio
+/storage
+
+# api server
+/log
+/public
 
 # OpenAPI-codegen
 openapi.json
 gen-client
 gen-server
+
+# npm
+node_modules/
+package-lock.json
+
+
+# mac
+.DS_Store
 
 
 # Binaries for programs and plugins

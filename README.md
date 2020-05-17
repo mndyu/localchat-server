@@ -3,6 +3,9 @@
 
 ## 実行
 ```
+# Postgres + Minio
+docker-compose up
+
 # SQLite3
 ./dev-imdb.sh
 
@@ -10,9 +13,12 @@
 ./dev-postgres.sh
 ```
 
+------------------------------------------------------------------------
+# API client
+
 ## client 生成
 ```
-# openapi.yaml -> openapi.json -> gen-client
+# 流れ: openapi.yaml -> openapi.json -> gen-client
 ./gen-client.sh
 ```
 
@@ -36,24 +42,24 @@ api.usersGet().then(users => {
 })
 ```
 
-## server 生成
+## server 生成 (適当)
 ```
 # openapi.yaml -> openapi.json -> gen-server
 ./gen-server.sh
 ```
 
+------------------------------------------------------------------------
 
 ## TODO
 - [ ] DB 接続
 - [ ] スキーマ定義
 - [ ] APIサーバ
 - [ ] websocket
-  - gorilla/websocket
-  - REST との連携
-  - 登録 & 受け取りの仕組み？
+- [ ] Minio
 - [ ] Docker Hub & GitHub Actions
 
 
+------------------------------------------------------------------------
 ## curl
 ```
 curl \
