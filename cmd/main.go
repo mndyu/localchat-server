@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/mndyu/localchat-server/apiv1"
@@ -18,6 +19,36 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type LogWriter struct {
+	f *os.File
+}
+
+func NewLogWriter(filename string) *LogWriter {
+	logFilePath := "./log/haha.txt"
+	// logFilePath := "/Users/mon/dev/gw/localchat/localchat-server/log/haha.txt"
+	f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	return &LogWriter{f: f}
+}
+func (l LogWriter) Write(p []byte) (n int, err error) {
+	n, err = os.Stdout.Write(p)
+	n, err = l.f.Write(p)
+	return
+}
+func (l LogWriter) Close() {
+	l.f.Close()
+	return
+}
+
+var defaultLogWriter *LogWriter
+
+func init() {
+	defaultLogWriter = NewLogWriter("")
+	log.SetOutput(*defaultLogWriter)
+}
+
 func main() {
 	runServer()
 }
@@ -25,6 +56,9 @@ func main() {
 var a = middleware.BasicAuth
 
 func runServer() {
+	// logger
+	defer defaultLogWriter.Close()
+
 	// db: 接続
 	var db *gorm.DB
 	var err error
@@ -55,6 +89,9 @@ func runServer() {
 	// e.Use(middleware.CSRF())
 	// e.AutoTLSManager.Cache = autocert.DirCache("/var/www/.cache")
 
+	// static
+	e.Static("/file", config.PublicDirectory)
+
 	// echo: routes
 	api := e.Group("/api")
 	ver := api.Group("/v1")
@@ -65,4 +102,5 @@ func runServer() {
 
 	// echo: start
 	e.Logger.Fatal(e.Start(config.Address))
+
 }

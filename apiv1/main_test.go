@@ -13,9 +13,10 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/appengine/log"
 
 	"github.com/mndyu/localchat-server/database"
-	utils "github.com/mndyu/localchat-server/testutils"
+	utils "github.com/mndyu/localchat-server/test/utils"
 )
 
 var mockDB *gorm.DB
@@ -23,12 +24,14 @@ var mockDB *gorm.DB
 // TestMain 全テストの実行
 func TestMain(m *testing.M) {
 	defer utils.CloseDb(mockDB)
+	db := getNewMockDB()
+	fmt.Print(db != nil)
 	var s = m.Run()
 	os.Exit(s)
 }
 
 func getNewMockDB() *gorm.DB {
-	mockDB := utils.RecreateDb(mockDB)
+	mockDB = utils.ResetDB(mockDB)
 	initDb(mockDB)
 	loadDummyData(mockDB)
 	return mockDB
@@ -37,89 +40,23 @@ func getNewMockDB() *gorm.DB {
 // initDb テスト用 DB を初期化する関数
 func initDb(db *gorm.DB) {
 	// schemass
-	for _, s := range database.All {
+	for _, s := range database.AllSchemas {
 		db.AutoMigrate(s)
+		t := reflect.TypeOf(s).Name()
+		log.Errorf("auto migrate %s failed: %s", t, err.Error())
 	}
 }
 
 // loadDummyData :
 // ダミーデータ読み込み
 func loadDummyData(db *gorm.DB) {
-	all := []interface{}{
-		database.User{},
-		database.Message{},
-		database.Group{},
-		database.Channel{},
-	}
-	utils.ReadJSON("../testdata/dummy.json", all, func(a interface{}) {
-		fmt.Println(reflect.TypeOf(a))
-		fmt.Printf("%d", reflect.TypeOf(a).Kind())
-		fmt.Printf("%d", reflect.ValueOf(a).Type().Kind())
-		db.Create(a)
+	utils.ReadJSON("../test/testdata/dummy.json", database.AllSchemas, func(a interface{}) {
+		//fmt.Printf("%v", a)
+		if err := db.Create(a).Error; err != nil {
+			t := reflect.TypeOf(a).Name()
+			log.Errorf("loadDummyData %s failed: %s", t, err.Error())
+		}
 	})
-}
-
-//
-func indirect(a interface{}) interface{} {
-	if reflect.TypeOf(a).Kind() == reflect.Ptr {
-		return reflect.Indirect(reflect.ValueOf(a)).Interface()
-	}
-	return a
-}
-func convert(a interface{}, t reflect.Type) interface{} {
-	v := reflect.ValueOf(a)
-	if v.Type().ConvertibleTo(t) == false {
-		return nil
-	}
-	return v.Convert(t).Interface()
-}
-func compareJsonMaps(expected jsonmap, target jsonmap) bool {
-	for k, v := range expected {
-		tv := target[k]
-		if reflect.TypeOf(v) != reflect.TypeOf(tv) {
-			tv = convert(tv, reflect.TypeOf(v))
-			if tv == nil {
-				return false
-			}
-		}
-		switch v.(type) {
-		case jsonmap:
-			if compareJsonMaps(v.(jsonmap), tv.(jsonmap)) == false {
-				return false
-			}
-		default:
-			if v != tv {
-				return false
-			}
-		}
-	}
-	return true
-}
-func compareJsons(expected interface{}, target interface{}) (bool, error) {
-	if reflect.TypeOf(expected) != reflect.TypeOf(target) {
-		return false, fmt.Errorf("types dont match: %s, %s", reflect.TypeOf(expected), reflect.TypeOf(target))
-	}
-
-	switch v := expected.(type) {
-	case jsonmap:
-		jov := target.(jsonmap)
-		if compareJsonMaps(v, jov) == false {
-			return false, nil
-		}
-	case []interface{}:
-		jov := target.([]interface{})
-		for i, item := range v {
-			r, err := compareJsons(item, jov[i])
-			if !r || err != nil {
-				return false, err
-			}
-		}
-	default:
-		if expected != target {
-			return false, nil
-		}
-	}
-	return true, nil
 }
 
 type apiresult struct {
@@ -133,6 +70,13 @@ func (r *apiresult) assertStatus(t *testing.T, expectedStatus int) bool {
 	return assert.Equal(t, r.status, expectedStatus)
 }
 func (r *apiresult) assertBody(t *testing.T, expectedBody interface{}) bool {
+	if str, ok := expectedBody.(string); ok {
+		var err error
+		expectedBody, err = utils.DecodeJSON(str)
+		if err != nil {
+			panic(fmt.Sprintf("expectedBody parse error %v", str))
+		}
+	}
 	result, err := compareJsons(expectedBody, r.body)
 	if err != nil {
 		assert.Fail(t, err.Error())

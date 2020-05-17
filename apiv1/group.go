@@ -3,8 +3,8 @@ package apiv1
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/mndyu/localchat-server/database"
 )
@@ -21,47 +21,27 @@ type groupMemberPostJson struct {
 	Myself bool `json:"myself"`
 }
 
-var (
-	groupPostJsonFields   = []string{"Name"}
-	groupResultJsonFields = []string{"ID", "Name"}
-)
-
-func getGroupById(db *gorm.DB, c echo.Context) (database.Group, error) {
-	var group database.Group
-
-	id := c.Param("id")
-	if id == "" {
-		return group, fmt.Errorf("group param not found")
-	}
-	if db.First(&group, id).Error != nil {
-		return group, fmt.Errorf("group not found")
-	}
-	return group, nil
-}
-
 // PostGroups POST /groups
 func PostGroups(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// input
-	var postData groupPostJson
+	var postData jsonmap
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request body")
 	}
 
 	// db
-	newItem := database.Group{
-		Name: postData.Name,
-	}
+	var newItem database.Group
+	filteredPostData := filterJsonmapWithStruct(postData, groupPostJson{})
+	assignJSONFields(&newItem, filteredPostData)
 	if db.Create(&newItem).Error != nil {
 		echo.NewHTTPError(http.StatusInternalServerError, "group update failed:")
 	}
 
 	// output
-	jsonData := groupResultJson{
-		ID:   newItem.ID,
-		Name: newItem.Name,
-	}
+	var jsonData groupResultJson
+	assignJSONFields(&jsonData, newItem)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -69,21 +49,19 @@ func PostGroups(context *Context, c echo.Context) error {
 func GetGroups(context *Context, c echo.Context) error {
 	db := context.DB
 
+	// input
+	limit := getLimit(c)
+	offset := getOffset(c)
+
 	// db
 	var groups []database.Group
-	if db.Find(&groups).Error != nil {
+	if db.Limit(limit).Offset(offset).Find(&groups).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "group not found")
 	}
 
 	// output
 	jsonData := []groupResultJson{}
-	for _, item := range jsonData {
-		jd := groupResultJson{
-			ID:   item.ID,
-			Name: item.Name,
-		}
-		jsonData = append(jsonData, jd)
-	}
+	assignJSONArrayFields(&jsonData, groups)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -91,16 +69,21 @@ func GetGroups(context *Context, c echo.Context) error {
 func GetGroupByID(context *Context, c echo.Context) error {
 	db := context.DB
 
-	group, err := getGroupById(db, c)
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	var group database.Group
+	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
 	// output
-	jsonData := groupResultJson{
-		ID:   group.ID,
-		Name: group.Name,
-	}
+	var jsonData groupResultJson
+	assignJSONFields(&jsonData, group)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -109,30 +92,31 @@ func PutGroupByID(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// input
-	var postData messagePostJson
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+	var postData jsonmap
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
 
 	// db
-	item, err := getGroupById(db, c)
-	if err != nil {
+	var group database.Group
+	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	newItem := database.Group{
-		Name: item.Name,
-	}
-	newItem, ok := filterUserData(item, newItem, groupPostJsonFields).(database.Group)
-	if !ok || db.Save(&newItem).Error != nil {
-		echo.NewHTTPError(http.StatusNotFound, "group update failed:")
+	var newItem database.Group
+	filteredPostData := filterJsonmapWithStruct(postData, groupPostJson{})
+	assignJSONFields(&newItem, filteredPostData)
+	if err := db.Save(&newItem).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("message create found: %v", err))
 	}
 
 	// output
-	jsonData := groupResultJson{
-		ID:   newItem.ID,
-		Name: newItem.Name,
-	}
+	var jsonData groupResultJson
+	assignJSONFields(&jsonData, newItem)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -140,8 +124,15 @@ func PutGroupByID(context *Context, c echo.Context) error {
 func DeleteGroupByID(context *Context, c echo.Context) error {
 	db := context.DB
 
-	group, err := getGroupById(db, c)
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	var group database.Group
+	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 	if err := db.Delete(&group).Error; err != nil {
@@ -149,10 +140,8 @@ func DeleteGroupByID(context *Context, c echo.Context) error {
 	}
 
 	// output
-	jsonData := groupResultJson{
-		ID:   group.ID,
-		Name: group.Name,
-	}
+	var jsonData groupResultJson
+	assignJSONFields(&jsonData, group)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -161,14 +150,18 @@ func PostGroupMembers(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// input
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
 	var postData groupMemberPostJson
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request body")
 	}
 
 	// db
-	item, err := getGroupById(db, c)
-	if err != nil {
+	var item database.Group
+	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 	if item.Members == nil {
@@ -194,31 +187,127 @@ func PostGroupMembers(context *Context, c echo.Context) error {
 	}
 
 	// output
-	return c.JSON(http.StatusOK, postData)
+	var jsonData userResultJson
+	assignJSONFields(&jsonData, newMember)
+	return c.JSON(http.StatusOK, jsonData)
 }
 
 // GetGroupMembers GET /groups/:id/members
 func GetGroupMembers(context *Context, c echo.Context) error {
-	// db := context.DB
-	return nil
+	db := context.DB
+
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	var item database.Group
+	if err := db.Find(&item, id).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	var members []database.User
+	if err := db.Model(&item).Related(&members, "Members").Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	// output
+	var jsonData []userResultJson
+	assignJSONFields(&jsonData, members)
+	return c.JSON(http.StatusOK, jsonData)
 }
 
 // DeleteGroupMemberByID DELETE /groups/:id/members/:id
 func DeleteGroupMemberByID(context *Context, c echo.Context) error {
-	// db := context.DB
-	return nil
+	db := context.DB
+
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+	userID, err := strconv.Atoi(c.Param("user_id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	var item database.Group
+	if err := db.Find(&item, id).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	var user database.User
+	if err := db.Find(&user, userID).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	if err := db.Model(&item).Association("Members").Delete(user).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	// output
+	var jsonData userResultJson
+	assignJSONFields(&jsonData, user)
+	return c.JSON(http.StatusOK, jsonData)
 }
 
 // GetGroupChannels GET /groups/:id/channels
 func GetGroupChannels(context *Context, c echo.Context) error {
-	// db := context.DB
-	return nil
+	db := context.DB
+
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	var item database.Group
+	if err := db.Find(&item, id).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	var channels []database.Channel
+	if err := db.Model(&item).Related(&channels, "Channels").Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	// output
+	var jsonData []channelResultJson
+	assignJSONFields(&jsonData, channels)
+	return c.JSON(http.StatusOK, jsonData)
 }
 
 // DeleteGroupChannelByID DELETE /groups/:id/channels/:id
 func DeleteGroupChannelByID(context *Context, c echo.Context) error {
-	// db := context.DB
-	return nil
+	db := context.DB
+
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+	channelID, err := strconv.Atoi(c.Param("channel_id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	var item database.Group
+	if err := db.Find(&item, id).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	var channel database.Channel
+	if err := db.Find(&channel, channelID).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+	if err := db.Model(&item).Association("Channels").Delete(channel).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	// output
+	var jsonData channelResultJson
+	assignJSONFields(&jsonData, channel)
+	return c.JSON(http.StatusOK, jsonData)
 }
 
 // PostGroupMessages POST /groups/:id/messages
@@ -231,14 +320,18 @@ func PostGroupMessages(context *Context, c echo.Context) error {
 	}
 
 	// input
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
 	var postData messagePostJson
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
 
 	// db
-	group, err := getGroupById(db, c)
-	if err != nil {
+	var group database.Group
+	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
@@ -270,11 +363,7 @@ func PostGroupMessages(context *Context, c echo.Context) error {
 	}
 
 	// output
-	jsonData := messageResultJson{
-		ID:        newMessage.ID,
-		UserID:    newMessage.UserID,
-		ChannelID: newMessage.ChannelID,
-		Text:      newMessage.Text,
-	}
+	var jsonData messageResultJson
+	assignJSONFields(&jsonData, newMessage)
 	return c.JSON(http.StatusOK, jsonData)
 }

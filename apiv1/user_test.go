@@ -1,6 +1,8 @@
 package apiv1
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,10 +30,13 @@ func TestGetUsers(t *testing.T) {
 		"name": "unkunkdo",
 	}})
 
+	b, _ := json.Marshal(res.body)
+	fmt.Println("data: ", string(b))
 }
 
 // PutUserByID PUT /users/:id
 func TestPutUserByID(t *testing.T) {
+
 }
 
 // GetUserByID GET /users/:id

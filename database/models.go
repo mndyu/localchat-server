@@ -1,15 +1,26 @@
 package database
 
-import "github.com/jinzhu/gorm"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 // All :
 // 全スキーマ
-var All = []interface{}{
+var AllSchemas = []interface{}{
 	Tee{},
 	User{},
 	Message{},
 	Group{},
 	Channel{},
+}
+
+type Model struct {
+	ID        uint       `json:"id" gorm:"primary_key;auto_increment:true"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at" sql:"index"`
 }
 
 type Tee struct {
@@ -48,4 +59,5 @@ type Channel struct {
 	GroupID  uint      `json:"group_id"`
 	Members  []User    `json:"members" gorm:"many2many:user_channels;"`
 	Messages []Message `json:"messages"`
+	Group    Group
 }

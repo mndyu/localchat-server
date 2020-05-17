@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// db
 var (
 	// SQLType : DBMS の種類
 	SQLType string = os.Getenv("DB_TYPE")
@@ -33,15 +34,24 @@ var (
 	dbProtocol string = "tcp(" + dbAddress + ")"
 
 	// DBConfig : その他設定
-	dbConfig string = "?charset=utf8&parseTime=true&loc=Asia%2FTokyo&sslmode=disable"
+	dbConfig string = "?sslmode=disable"
 
 	// SQLfile : SQL ファイル？
 	// SQLfile string = "creatorslab-ubuntu-googlegcp.sql"
 )
 
+// minio
+var (
+	accesssKey string
+	secretKey  string
+)
+
+// api server
 const (
 	// Address : サーバのアドレス & ポート番号
-	Address string = ":1324"
+	Address         string = ":1323"
+	PublicDirectory string = "public"
+	PublicPrefix    string = "/file/"
 )
 
 // GetConnectionURL :

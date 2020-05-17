@@ -3,8 +3,8 @@ package apiv1
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/mndyu/localchat-server/database"
 )
@@ -20,51 +20,27 @@ type messageResultJson struct {
 	Text      string `json:"text"`
 }
 
-var (
-	messageResultJsonFields = []string{"ID", "UserID", "ChannelID", "Text"}
-	messagePostJsonFields   = []string{"UserID", "ChannelID", "Text"}
-)
-
-func getMessageById(db *gorm.DB, c echo.Context) (database.Message, error) {
-	var msg database.Message
-
-	id := c.Param("id")
-	if id == "" {
-		return msg, fmt.Errorf("msg param not found")
-	}
-	if db.First(&msg, id).Error != nil {
-		return msg, fmt.Errorf("msg not found")
-	}
-	return msg, nil
-}
-
 // PostMessages POST /messages
 func PostMessages(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// input
-	var postData messagePostJson
+	var postData jsonmap
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "message not found")
 	}
 
 	// db
-	newItem := database.Message{
-		Text: postData.Text,
-	}
-	// newUser, ok := filterUserData(baseUser, newUser, userPostJsonFields).(database.User)
+	var newItem database.Message
+	filteredPostData := filterJsonmapWithStruct(postData, messagePostJson{})
+	assignJSONFields(&newItem, filteredPostData)
 	if err := db.Create(&newItem).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("message create found: %v", err))
 	}
 
 	// output
-	jsonData := messageResultJson{
-		ID:        newItem.ID,
-		Text:      newItem.Text,
-		UserID:    newItem.UserID,
-		ChannelID: newItem.ChannelID,
-	}
-	// jsonData := filterForJson(newUser, userResultJsonFields)
+	var jsonData messageResultJson
+	assignJSONFields(&jsonData, newItem)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -72,23 +48,19 @@ func PostMessages(context *Context, c echo.Context) error {
 func GetMessages(context *Context, c echo.Context) error {
 	db := context.DB
 
+	// input
+	limit := getLimit(c)
+	offset := getOffset(c)
+
 	// db
 	var msgs []database.Message
-	if db.Find(&msgs).Error != nil {
+	if db.Limit(limit).Offset(offset).Find(&msgs).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "message not found")
 	}
 
 	// output
 	jsonData := []messageResultJson{}
-	for _, u := range msgs {
-		jd := messageResultJson{
-			ID:        u.ID,
-			Text:      u.Text,
-			UserID:    u.UserID,
-			ChannelID: u.ChannelID,
-		}
-		jsonData = append(jsonData, jd)
-	}
+	assignJSONArrayFields(&jsonData, msgs)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -96,19 +68,21 @@ func GetMessages(context *Context, c echo.Context) error {
 func GetMessageByID(context *Context, c echo.Context) error {
 	db := context.DB
 
-	// db
-	msg, err := getMessageById(db, c)
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	var msg database.Message
+	if err := db.Find(&msg, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
 	// output
-	jsonData := messageResultJson{
-		ID:        msg.ID,
-		Text:      msg.Text,
-		UserID:    msg.UserID,
-		ChannelID: msg.ChannelID,
-	}
+	var jsonData messageResultJson
+	assignJSONFields(&jsonData, msg)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -117,34 +91,30 @@ func PutMessageByID(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// input
-	var postData messagePostJson
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+	var postData jsonmap
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
 
 	// db
-	item, err := getMessageById(db, c)
-	if err != nil {
+	var msg database.Message
+	if err := db.Find(&msg, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	newItem := database.Message{
-		Text:      item.Text,
-		UserID:    item.UserID,
-		ChannelID: item.ChannelID,
-	}
-	newItem, ok := filterUserData(item, newItem, messagePostJsonFields).(database.Message)
-	if !ok || db.Save(&item).Error != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "message not found")
+	filteredPostData := filterJsonmapWithStruct(postData, messagePostJson{})
+	assignJSONFields(&msg, filteredPostData)
+	if err := db.Save(&msg).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found: %s", err.Error()))
 	}
 
 	// output
-	jsonData := messageResultJson{
-		ID:        item.ID,
-		Text:      item.Text,
-		UserID:    item.UserID,
-		ChannelID: item.ChannelID,
-	}
+	var jsonData messageResultJson
+	assignJSONFields(&jsonData, msg)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -152,21 +122,28 @@ func PutMessageByID(context *Context, c echo.Context) error {
 func DeleteMessageByID(context *Context, c echo.Context) error {
 	db := context.DB
 
-	// db
-	msg, err := getMessageById(db, c)
+	// input
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+	var postData jsonmap
+	if err := c.Bind(&postData); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+	}
+
+	// db
+	var msg database.Message
+	if err := db.Find(&msg, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
+
 	if db.Delete(&msg).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "msg delete failed")
 	}
 
 	// output
-	jsonData := messageResultJson{
-		ID:        msg.ID,
-		Text:      msg.Text,
-		UserID:    msg.UserID,
-		ChannelID: msg.ChannelID,
-	}
+	var jsonData messageResultJson
+	assignJSONFields(&jsonData, msg)
 	return c.JSON(http.StatusOK, jsonData)
 }
