@@ -7,6 +7,38 @@ info:
   title: localchat API server
   description: localchat API server
 paths:
+  /ping:
+    get:
+      summary: Ping, 生存確認
+      responses:
+        "200":
+          description: 時間情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ping"
+  /upload:
+    post:
+      summary: ファイルのアップロード
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                # The property name 'file' will be used for all files.
+                file:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: ファイル情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
   /profile:
     get:
       summary: 自分のユーザ表示
@@ -360,6 +392,18 @@ components:
         type: integer
         format: int32
   schemas:
+    Ping:
+      type: object
+      properties:
+        time:
+          type: string
+          format: date-time
+    UploadResponse:
+      type: object
+      properties:
+        url:
+          description: アップロードしたファイルの URL
+          type: string
     User:
       type: object
       properties:
