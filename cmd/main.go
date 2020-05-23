@@ -3,13 +3,11 @@ package main
 import (
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/mndyu/localchat-server/apiv1"
 	"github.com/mndyu/localchat-server/config"
 	"github.com/mndyu/localchat-server/database"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -23,14 +21,12 @@ type LogWriter struct {
 	f *os.File
 }
 
-func NewLogWriter(filename string) *LogWriter {
-	logFilePath := "./log/haha.txt"
-	// logFilePath := "/Users/mon/dev/gw/localchat/localchat-server/log/haha.txt"
-	f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func NewLogWriter(filepath string) (*LogWriter, error) {
+	f, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return &LogWriter{f: f}
+	return &LogWriter{f: f}, nil
 }
 func (l LogWriter) Write(p []byte) (n int, err error) {
 	n, err = os.Stdout.Write(p)
@@ -45,7 +41,12 @@ func (l LogWriter) Close() {
 var defaultLogWriter *LogWriter
 
 func init() {
-	defaultLogWriter = NewLogWriter("")
+	var err error
+	defaultLogWriter, err = NewLogWriter(config.LogFile)
+	if err != nil {
+		log.Errorf("failed to open log file %s", config.LogFile)
+		return
+	}
 	log.SetOutput(*defaultLogWriter)
 }
 
@@ -60,20 +61,9 @@ func runServer() {
 	defer defaultLogWriter.Close()
 
 	// db: 接続
-	var db *gorm.DB
-	var err error
-	retrySec := 5
-	for {
-		log.Infof("DB connection: %s %s", config.SQLType, config.GetConnectionURL())
-		// db, err = gorm.Open("sqlite3", ":memory:") // テスト用インメモリDB
-		db, err = gorm.Open(config.SQLType, config.GetConnectionURL()) // DBMS
-		if err == nil {
-			// panic("failed to connect database")
-			break
-		}
-		log.Errorf("DB connection failed: %s", err.Error())
-		log.Infof("DB connection: retrying in %d seconds ...", retrySec)
-		time.Sleep(time.Duration(retrySec) * time.Second)
+	db, err := database.Connect(config.SQLType, config.GetConnectionURL(), 5)
+	if err != nil {
+		log.Fatalf("failed to connect to db %s", err.Error())
 	}
 	defer db.Close()
 

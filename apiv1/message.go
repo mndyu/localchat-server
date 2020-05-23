@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
 )
 
 type messagePostJson struct {
@@ -31,7 +31,7 @@ func PostMessages(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var newItem database.Message
+	var newItem schema.Message
 	filteredPostData := filterJsonmapWithStruct(postData, messagePostJson{})
 	assignJSONFields(&newItem, filteredPostData)
 	if err := db.Create(&newItem).Error; err != nil {
@@ -53,7 +53,7 @@ func GetMessages(context *Context, c echo.Context) error {
 	offset := getOffset(c)
 
 	// db
-	var msgs []database.Message
+	var msgs []schema.Message
 	if db.Limit(limit).Offset(offset).Find(&msgs).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "message not found")
 	}
@@ -75,7 +75,7 @@ func GetMessageByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var msg database.Message
+	var msg schema.Message
 	if err := db.Find(&msg, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -101,7 +101,7 @@ func PutMessageByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var msg database.Message
+	var msg schema.Message
 	if err := db.Find(&msg, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -133,7 +133,7 @@ func DeleteMessageByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var msg database.Message
+	var msg schema.Message
 	if err := db.Find(&msg, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}

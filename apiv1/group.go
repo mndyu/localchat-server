@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
 )
 
 type groupPostJson struct {
@@ -32,7 +32,7 @@ func PostGroups(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var newItem database.Group
+	var newItem schema.Group
 	filteredPostData := filterJsonmapWithStruct(postData, groupPostJson{})
 	assignJSONFields(&newItem, filteredPostData)
 	if db.Create(&newItem).Error != nil {
@@ -54,7 +54,7 @@ func GetGroups(context *Context, c echo.Context) error {
 	offset := getOffset(c)
 
 	// db
-	var groups []database.Group
+	var groups []schema.Group
 	if db.Limit(limit).Offset(offset).Find(&groups).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "group not found")
 	}
@@ -76,7 +76,7 @@ func GetGroupByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var group database.Group
+	var group schema.Group
 	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -102,12 +102,12 @@ func PutGroupByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var group database.Group
+	var group schema.Group
 	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	var newItem database.Group
+	var newItem schema.Group
 	filteredPostData := filterJsonmapWithStruct(postData, groupPostJson{})
 	assignJSONFields(&newItem, filteredPostData)
 	if err := db.Save(&newItem).Error; err != nil {
@@ -131,7 +131,7 @@ func DeleteGroupByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var group database.Group
+	var group schema.Group
 	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -160,12 +160,12 @@ func PostGroupMembers(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Group
+	var item schema.Group
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 	if item.Members == nil {
-		item.Members = []*database.User{}
+		item.Members = []*schema.User{}
 	}
 	var userID uint
 	if postData.Myself {
@@ -177,7 +177,7 @@ func PostGroupMembers(context *Context, c echo.Context) error {
 	} else {
 		userID = postData.UserID
 	}
-	var newMember database.User
+	var newMember schema.User
 	if err := db.First(&newMember, userID).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found: %d, %v", postData.UserID, postData.Myself))
 	}
@@ -203,11 +203,11 @@ func GetGroupMembers(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Group
+	var item schema.Group
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var members []database.User
+	var members []schema.User
 	if err := db.Model(&item).Related(&members, "Members").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -233,11 +233,11 @@ func DeleteGroupMemberByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Group
+	var item schema.Group
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, userID).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -262,11 +262,11 @@ func GetGroupChannels(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Group
+	var item schema.Group
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var channels []database.Channel
+	var channels []schema.Channel
 	if err := db.Model(&item).Related(&channels, "Channels").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -292,11 +292,11 @@ func DeleteGroupChannelByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Group
+	var item schema.Group
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var channel database.Channel
+	var channel schema.Channel
 	if err := db.Find(&channel, channelID).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -330,18 +330,18 @@ func PostGroupMessages(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var group database.Group
+	var group schema.Group
 	if err := db.Find(&group, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	var channel database.Channel
+	var channel schema.Channel
 	if group.Channels == nil {
-		newChannel := database.Channel{}
+		newChannel := schema.Channel{}
 		if err := db.Create(&newChannel).Error; err != nil {
 			return echo.NewHTTPError(http.StatusNotFound, "failed creating default channel")
 		}
-		group.Channels = []database.Channel{
+		group.Channels = []schema.Channel{
 			newChannel,
 		}
 		channel = newChannel
@@ -350,9 +350,9 @@ func PostGroupMessages(context *Context, c echo.Context) error {
 	}
 
 	if channel.Messages == nil {
-		channel.Messages = []database.Message{}
+		channel.Messages = []schema.Message{}
 	}
-	newMessage := database.Message{
+	newMessage := schema.Message{
 		Text:      postData.Text,
 		ChannelID: channel.ID,
 		UserID:    clientUser.ID,

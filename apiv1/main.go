@@ -9,7 +9,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
-	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
 	"github.com/mndyu/localchat-server/utils"
 )
 
@@ -311,13 +311,13 @@ func getRowById(db *gorm.DB, c echo.Context, s interface{}, id string) (interfac
 	}
 	return s, nil
 }
-func getClientUser(context *Context, c echo.Context) (database.User, error) {
+func getClientUser(context *Context, c echo.Context) (schema.User, error) {
 	db := context.DB
 	ip := c.RealIP()
 
-	var user database.User
-	if db.First(&user, "ip_address = ?", ip).Error != nil {
-		return user, fmt.Errorf("user not found: %s")
+	var user schema.User
+	if err := db.First(&user, "ip_address = ?", ip).Error; err != nil {
+		return user, fmt.Errorf("user not found: %s", err.Error())
 	}
 	return user, nil
 }

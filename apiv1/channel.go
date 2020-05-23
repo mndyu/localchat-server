@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
 )
 
 type channelPostJson struct {
@@ -36,7 +36,7 @@ func PostChannels(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var newItem database.Channel
+	var newItem schema.Channel
 	filteredPostData := filterJsonmapWithStruct(postData, channelPostJson{})
 	assignJSONFields(&newItem, filteredPostData)
 	if db.Create(&newItem).Error != nil {
@@ -58,7 +58,7 @@ func GetChannels(context *Context, c echo.Context) error {
 	offset := getOffset(c)
 
 	// db
-	var channels []database.Channel
+	var channels []schema.Channel
 	if db.Limit(limit).Offset(offset).Find(&channels).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "channels not found")
 	}
@@ -84,12 +84,12 @@ func PutChannelByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var channel database.Channel
+	var channel schema.Channel
 	if err := db.Find(&channel, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	var newItem database.Channel
+	var newItem schema.Channel
 	filteredPostData := filterJsonmapWithStruct(postData, channelPostJson{})
 	assignJSONFields(&newItem, filteredPostData)
 	if err := db.Save(&newItem).Error; err != nil {
@@ -113,7 +113,7 @@ func GetChannelByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var channel database.Channel
+	var channel schema.Channel
 	if err := db.Find(&channel, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -135,7 +135,7 @@ func DeleteChannelByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var channel database.Channel
+	var channel schema.Channel
 	if err := db.Find(&channel, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -164,12 +164,12 @@ func PostChannelMembers(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Channel
+	var item schema.Channel
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 	if item.Members == nil {
-		item.Members = []database.User{}
+		item.Members = []schema.User{}
 	}
 	var userID uint
 	if postData.Myself {
@@ -181,7 +181,7 @@ func PostChannelMembers(context *Context, c echo.Context) error {
 	} else {
 		userID = postData.UserID
 	}
-	var newMember database.User
+	var newMember schema.User
 	if err := db.First(&newMember, userID).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found: %d, %v", postData.UserID, postData.Myself))
 	}
@@ -207,11 +207,11 @@ func GetChannelMembers(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Channel
+	var item schema.Channel
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var members []database.User
+	var members []schema.User
 	if err := db.Model(&item).Related(&members, "Members").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -237,11 +237,11 @@ func DeleteChannelMemberByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var item database.Channel
+	var item schema.Channel
 	if err := db.Find(&item, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, userID).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}

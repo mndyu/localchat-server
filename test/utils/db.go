@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/mndyu/localchat-server/config"
-	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -69,11 +69,11 @@ func ResetDB(db *gorm.DB) *gorm.DB {
 	}
 
 	// truncate all tables
-	for _, s := range database.AllSchemas {
+	for _, s := range schema.All {
 		tableName := db.Model("").NewScope(s).TableName()
 		err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s", tableName)).Error
 		if err != nil {
-			log.Errorf("truncate error:", err.Error())
+			log.Errorf("truncate error: %s", err.Error())
 		}
 	}
 	return db

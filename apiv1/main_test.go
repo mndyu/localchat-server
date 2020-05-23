@@ -10,12 +10,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
+
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/appengine/log"
 
-	"github.com/mndyu/localchat-server/database"
 	utils "github.com/mndyu/localchat-server/test/utils"
 )
 
@@ -40,17 +42,18 @@ func getNewMockDB() *gorm.DB {
 // initDb テスト用 DB を初期化する関数
 func initDb(db *gorm.DB) {
 	// schemass
-	for _, s := range database.AllSchemas {
-		db.AutoMigrate(s)
-		t := reflect.TypeOf(s).Name()
-		log.Errorf("auto migrate %s failed: %s", t, err.Error())
+	for _, s := range schema.All {
+		if err := db.AutoMigrate(s).Error; err != nil {
+			t := reflect.TypeOf(s).Name()
+			log.Errorf("auto migrate %s failed: %s", t, err.Error())
+		}
 	}
 }
 
 // loadDummyData :
 // ダミーデータ読み込み
 func loadDummyData(db *gorm.DB) {
-	utils.ReadJSON("../test/testdata/dummy.json", database.AllSchemas, func(a interface{}) {
+	database.ReadSeedFile("../test/testdata/dummy.json", schema.All, func(a interface{}) {
 		//fmt.Printf("%v", a)
 		if err := db.Create(a).Error; err != nil {
 			t := reflect.TypeOf(a).Name()
@@ -77,6 +80,21 @@ func (r *apiresult) assertBody(t *testing.T, expectedBody interface{}) bool {
 			panic(fmt.Sprintf("expectedBody parse error %v", str))
 		}
 	}
+	result, err := compareJsons(expectedBody, r.body)
+	if err != nil {
+		assert.Fail(t, err.Error())
+	} else if result == false {
+		assert.Fail(t, fmt.Sprintf("body not equal: %v != %v", expectedBody, r.body))
+	}
+	return result
+}
+func (r *apiresult) assertBodyWithDB(t *testing.T, db *gorm.DB, format interface{}, query string) bool {
+	var expectedBody interface{}
+
+	// query
+	db.Raw(query)
+
+	//
 	result, err := compareJsons(expectedBody, r.body)
 	if err != nil {
 		assert.Fail(t, err.Error())

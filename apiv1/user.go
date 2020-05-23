@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
 )
 
 type userPostJson struct {
@@ -27,7 +27,7 @@ func GetProfile(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// db
-	var users database.User
+	var users schema.User
 	if db.Find(&users).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
@@ -47,7 +47,7 @@ func GetUsers(context *Context, c echo.Context) error {
 	offset := getOffset(c)
 
 	// db
-	var users []database.User
+	var users []schema.User
 	if db.Limit(limit).Offset(offset).Find(&users).Error != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
@@ -69,7 +69,7 @@ func PostUsers(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var newUser database.User
+	var newUser schema.User
 	filteredPostData := filterJsonmapWithStruct(postData, userPostJson{})
 	assignJSONFields(&newUser, filteredPostData)
 	if err := db.Create(&newUser).Error; err != nil {
@@ -97,7 +97,7 @@ func PutUserByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -125,7 +125,7 @@ func GetUserByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -147,7 +147,7 @@ func DeleteUsersByID(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -172,11 +172,11 @@ func GetUserMessages(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var msgs []database.Message
+	var msgs []schema.Message
 	if err := db.Model(&user).Related(&msgs, "Messages").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -198,11 +198,11 @@ func GetUserGroups(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var groups []database.Group
+	var groups []schema.Group
 	if err := db.Model(&user).Related(&groups, "Groups").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -224,11 +224,11 @@ func GetUserChannels(context *Context, c echo.Context) error {
 	}
 
 	// db
-	var user database.User
+	var user schema.User
 	if err := db.Find(&user, id).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
-	var channels []database.Channel
+	var channels []schema.Channel
 	if err := db.Model(&user).Related(&channels, "Channels").Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
