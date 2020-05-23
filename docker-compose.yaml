@@ -12,21 +12,21 @@ services:
   #   ports:
   #     - "3306:3306"
   #   volumes:
-  #      - ./mysql/.data/db:/var/lib/mysql
+  #      - ./data/mysql/.data/db:/var/lib/mysql
   #   env_file: ./mysql/.env
   postgres:
     build: ./postgres
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres/pgdata:/var/lib/postgresql/data
+      - ./data/postgres/pgdata:/var/lib/postgresql/data
     env_file: ./postgres/.env
     networks:
       - app_net
   minio:
     image: minio/minio:latest
     # volumes:
-    #   - ./storage/data:/data
+    #   - ./data/storage/data:/data
     ports:
       - "9000:9000"
     environment:
@@ -52,3 +52,5 @@ services:
   #     app_net:
   #       ipv4_address: 172.16.12.242
   #       ipv6_address: 2001:3984:3989::10
+  caddy:
+    image: caddy:2-alpine

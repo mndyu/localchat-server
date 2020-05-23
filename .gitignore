@@ -2,16 +2,8 @@
 /TODO.md
 
 
-# db
-pgdata
-
-# minio
-/storage
-
-# api server
-/log
-/public
-
+# data directory
+/data
 
 
 # mac

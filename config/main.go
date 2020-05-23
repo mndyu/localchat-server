@@ -5,6 +5,13 @@ import (
 	"os"
 )
 
+func replaceIfEmpty(s string, replace string) string {
+	if s == "" {
+		return replace
+	}
+	return s
+}
+
 // db
 var (
 	// SQLType : DBMS の種類
@@ -49,9 +56,14 @@ var (
 // api server
 const (
 	// Address : サーバのアドレス & ポート番号
-	Address         string = ":1323"
-	PublicDirectory string = "public"
-	PublicPrefix    string = "/file/"
+	Address      string = ":1323"
+	PublicPrefix string = "/file/"
+)
+
+var (
+	PublicDirectory string = replaceIfEmpty(os.Getenv("WEB_PUBLIC_DIRECTORY"), "/home/app/web/public")
+	LogFile         string = replaceIfEmpty(os.Getenv("SERVER_LOG_FILE"), "/home/app/logs/default.log")
+	SeedFile        string = replaceIfEmpty(os.Getenv("API_SERVER_SEED_FILE"), "/home/app/seeds/default.json")
 )
 
 // GetConnectionURL :
@@ -59,6 +71,9 @@ const (
 func GetConnectionURL() string {
 	if dbURL != "" {
 		return dbURL
+	}
+	if dbAddress == "" {
+		return ""
 	}
 	connectTemplate := "postgres://%s:%s@%s/%s%s"
 	connect := fmt.Sprintf(connectTemplate, dbUser, dbPass, dbAddress, dbName, dbConfig)
