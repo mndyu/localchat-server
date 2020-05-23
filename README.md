@@ -13,6 +13,19 @@ docker-compose up
 ./dev-postgres.sh
 ```
 
+
+## env
+```
+DB_TYPE=<RDBMS名>
+DB_URL=<接続URL>
+DB_ADDRESS=<DBアドレス>
+DB_DATABASE=<DB名>
+DB_USER=<ユーザ名>
+DB_PASSWORD=<ユーザのパスワード>
+SERVER_LOG_FILE=<ログファイル>
+API_SERVER_SEED_FILE=<seedファイルの場所>
+```
+
 ------------------------------------------------------------------------
 # API client
 

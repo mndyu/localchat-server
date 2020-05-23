@@ -103,7 +103,7 @@ func PostUpload(context *Context, c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("upload failed %s", err.Error()))
 	}
-	files := form.File["files"]
+	files := form.File["file"]
 
 	var result []uploadResult
 	for _, file := range files {
