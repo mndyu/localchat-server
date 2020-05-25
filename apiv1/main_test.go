@@ -18,14 +18,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	utils "github.com/mndyu/localchat-server/test/utils"
+	"github.com/mndyu/localchat-server/test/testutils"
 )
 
 var mockDB *gorm.DB
 
 // TestMain 全テストの実行
 func TestMain(m *testing.M) {
-	defer utils.CloseDb(mockDB)
+	defer testutils.CloseDb(mockDB)
 	db := getNewMockDB()
 	fmt.Print(db != nil)
 	var s = m.Run()
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 
 func getNewMockDB() *gorm.DB {
-	mockDB = utils.ResetDB(mockDB)
+	mockDB = testutils.ResetDB(mockDB)
 	initDb(mockDB)
 	loadDummyData(mockDB)
 	return mockDB
@@ -75,7 +75,7 @@ func (r *apiresult) assertStatus(t *testing.T, expectedStatus int) bool {
 func (r *apiresult) assertBody(t *testing.T, expectedBody interface{}) bool {
 	if str, ok := expectedBody.(string); ok {
 		var err error
-		expectedBody, err = utils.DecodeJSON(str)
+		expectedBody, err = testutils.DecodeJSON(str)
 		if err != nil {
 			panic(fmt.Sprintf("expectedBody parse error %v", str))
 		}
@@ -146,7 +146,7 @@ func (a *testapi) Get(handlerFunc HandlerFunc, params interface{}, queryParams i
 	// ダミーのリクエスト作成
 	e := echo.New()
 	if paramMap != nil {
-		utils.SetMaxParam(e, len(paramMap)) // echo v4 のみ必要
+		testutils.SetMaxParam(e, len(paramMap)) // echo v4 のみ必要
 	}
 	req := httptest.NewRequest(http.MethodGet, "/?"+queryString, nil)
 	rec := httptest.NewRecorder()
@@ -165,12 +165,15 @@ func (a *testapi) Get(handlerFunc HandlerFunc, params interface{}, queryParams i
 	}
 
 	// result
-	body, err := utils.DecodeJSON(rec.Body.String())
+	body, err := testutils.DecodeJSON(rec.Body.String())
 	if err != nil {
 		return nil, fmt.Errorf("Failed to decode json string: %s, %s", rec.Body.String(), err.Error())
 	}
 
 	return &apiresult{rec.Code, body, rec, handlerErr}, nil
+}
+func (a *testapi) Delete(handlerFunc HandlerFunc, params interface{}, queryParams interface{}) (*apiresult, error) {
+	return a.Get(handlerFunc, params, queryParams)
 }
 
 func (a *testapi) Post(handlerFunc HandlerFunc, params interface{}, reqBody interface{}) (*apiresult, error) {
@@ -197,7 +200,7 @@ func (a *testapi) Post(handlerFunc HandlerFunc, params interface{}, reqBody inte
 	// body
 	reqString, ok := reqBody.(string)
 	if ok == false {
-		reqString, err = utils.ToJSON(reqBody)
+		reqString, err = testutils.ToJSON(reqBody)
 		if err != nil {
 			return nil, fmt.Errorf("reqbody parse error %v", reqBody)
 		}
@@ -206,7 +209,7 @@ func (a *testapi) Post(handlerFunc HandlerFunc, params interface{}, reqBody inte
 	// ダミーのリクエスト作成
 	e := echo.New()
 	if paramMap != nil {
-		utils.SetMaxParam(e, len(paramMap)) // echo v4 のみ必要
+		testutils.SetMaxParam(e, len(paramMap)) // echo v4 のみ必要
 	}
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(reqString))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -226,9 +229,12 @@ func (a *testapi) Post(handlerFunc HandlerFunc, params interface{}, reqBody inte
 	}
 
 	// result
-	body, err := utils.DecodeJSON(rec.Body.String())
+	body, err := testutils.DecodeJSON(rec.Body.String())
 	if err != nil {
 		return nil, fmt.Errorf("Failed to decode json string: %s, %s", rec.Body.String(), err)
 	}
 	return &apiresult{rec.Code, body, rec, handlerErr}, nil
+}
+func (a *testapi) Put(handlerFunc HandlerFunc, params interface{}, reqBody interface{}) (*apiresult, error) {
+	return a.Post(handlerFunc, params, reqBody)
 }
