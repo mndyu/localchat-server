@@ -10,6 +10,6 @@ docker run --rm -d --name postgres-1 --network host --env-file "$(pwd)"/postgres
 # run go command
 export $(cat dev-postgres.env | xargs) &&
 export WEB_PUBLIC_DIRECTORY=$DIR/data/public
-export SERVER_LOG_FILE=$DIR/data/log/default.log
+export API_SERVER_LOG_FILE=$DIR/data/log/default.log
 export API_SERVER_SEED_FILE=$DIR/data/seed/default.json
 go run ./cmd

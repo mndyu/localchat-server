@@ -1,5 +1,8 @@
 # localchat-server
 
+- Go 1.14
+- Docker
+
 
 ## 実行
 ```
@@ -22,7 +25,8 @@ DB_ADDRESS=<DBアドレス>
 DB_DATABASE=<DB名>
 DB_USER=<ユーザ名>
 DB_PASSWORD=<ユーザのパスワード>
-SERVER_LOG_FILE=<ログファイル>
+API_SERVER_ADDRESS=<サーバのアドレス (`:1324`)>
+API_SERVER_LOG_FILE=<ログファイル>
 API_SERVER_SEED_FILE=<seedファイルの場所>
 ```
 

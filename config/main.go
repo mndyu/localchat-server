@@ -54,15 +54,15 @@ var (
 )
 
 // api server
-const (
+var (
 	// Address : サーバのアドレス & ポート番号
-	Address      string = ":1323"
+	Address      string = replaceIfEmpty(os.Getenv("API_SERVER_ADDRESS"), ":1323")
 	PublicPrefix string = "/file/"
 )
 
 var (
 	PublicDirectory string = replaceIfEmpty(os.Getenv("WEB_PUBLIC_DIRECTORY"), "/home/app/web/public")
-	LogFile         string = replaceIfEmpty(os.Getenv("SERVER_LOG_FILE"), "/home/app/logs/default.log")
+	LogFile         string = replaceIfEmpty(os.Getenv("API_SERVER_LOG_FILE"), "/home/app/logs/default.log")
 	SeedFile        string = replaceIfEmpty(os.Getenv("API_SERVER_SEED_FILE"), "/home/app/seeds/default.json")
 )
 
