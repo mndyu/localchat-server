@@ -44,7 +44,7 @@ func init() {
 	var err error
 	defaultLogWriter, err = NewLogWriter(config.LogFile)
 	if err != nil {
-		log.Errorf("failed to open log file %s", config.LogFile)
+		log.Errorf("failed to open log file %s: %s", config.LogFile, err.Error())
 		return
 	}
 	log.SetOutput(*defaultLogWriter)
