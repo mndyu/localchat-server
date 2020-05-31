@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"os"
+	"path"
+	"time"
 
 	"github.com/mndyu/localchat-server/apiv1"
 	"github.com/mndyu/localchat-server/config"
@@ -17,18 +19,40 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// 例: 202005302307
+func getLogFileName() string g{
+	now := time.Now()
+	return now.Format("200612150405.log")
+}
+
 type LogWriter struct {
 	f *os.File
+	date time.Time
 }
+
 
 func NewLogWriter(filepath string) (*LogWriter, error) {
 	f, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
-	return &LogWriter{f: f}, nil
+	return &LogWriter{f: f, date: time.Now()}, nil
+}
+func (l LogWriter) isLogfileOld() {
+	ld := l.date
+	y, m, d := time.Now().Date()
+	return y != ld.Year() && m != ld.Month() && d != ld.Day()
 }
 func (l LogWriter) Write(p []byte) (n int, err error) {
+	if l.isLogfileOld() {
+		newFilePath = path.Join(config.LogDirectory, getLogFileName())
+		nlw, err := NewLogWriter(newFilePath)
+		if err != nil {
+			log.Errorf("failed to open log file %s: %s", newFilePath, err.Error())
+			return
+		}
+		l = *nlw
+	}
 	n, err = os.Stdout.Write(p)
 	n, err = l.f.Write(p)
 	return

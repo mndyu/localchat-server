@@ -63,6 +63,7 @@ var (
 var (
 	PublicDirectory string = replaceIfEmpty(os.Getenv("WEB_PUBLIC_DIRECTORY"), "/home/app/web/public")
 	LogFile         string = replaceIfEmpty(os.Getenv("API_SERVER_LOG_FILE"), "/home/app/logs/default.log")
+	LogDirectory    string = replaceIfEmpty(os.Getenv("API_SERVER_LOG_FILE"), "/home/app/logs")
 	SeedFile        string = replaceIfEmpty(os.Getenv("API_SERVER_SEED_FILE"), "/home/app/seeds/default.json")
 )
 
