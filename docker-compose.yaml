@@ -18,17 +18,19 @@ services:
     build: ./postgres
     ports:
       - "5432:5432"
+    networks:
+      - app_net
     volumes:
       - ./data/postgres/pgdata:/var/lib/postgresql/data
     env_file: ./postgres/.env
-    networks:
-      - app_net
   minio:
     image: minio/minio:latest
     # volumes:
     #   - ./data/storage/data:/data
     ports:
       - "9000:9000"
+    networks:
+      - app_net
     environment:
       MINIO_ACCESS_KEY: minio
       MINIO_SECRET_KEY: minio123
@@ -39,18 +41,27 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
-  # api-server:
-  #   build: .
-  #   depends_on:
-  #     - postgres
-  #   env_file: .env
-  #   # env_file: dev-imdb.env
-  #   ports:
-  #     - "1323:1323"
-  #   # network_mode: host
-  #   networks:
-  #     app_net:
-  #       ipv4_address: 172.16.12.242
-  #       ipv6_address: 2001:3984:3989::10
+  api-server:
+    build: .
+    depends_on:
+      - postgres
+    env_file: .env
+    # env_file: dev-imdb.env
+    ports:
+      - "1323:1323"
+    # network_mode: host
+    networks:
+      app_net:
+        ipv4_address: 172.16.12.242
+        ipv6_address: 2001:3984:3989::10
   caddy:
     image: caddy:2-alpine
+    ports:
+      - "2019:80"
+    networks:
+      - app_net
+    volumes:
+      - ./data/caddy/data:/data
+      - ./data/caddy/config:/config
+      - ./data/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./data/public:/usr/share/caddy

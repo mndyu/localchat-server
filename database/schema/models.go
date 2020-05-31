@@ -16,7 +16,9 @@ type Model struct {
 // All :
 // 全スキーマ
 var All = []interface{}{
+	// テスト用
 	Tee{},
+	//
 	User{},
 	Message{},
 	Group{},

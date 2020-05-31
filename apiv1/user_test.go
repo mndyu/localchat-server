@@ -26,9 +26,7 @@ func TestGetUsers(t *testing.T) {
 		return
 	}
 	res.assertStatus(t, 200)
-	res.assertBody(t, []interface{}{jsonmap{
-		"name": "unkunkdo",
-	}})
+	res.assertBody(t, `[{"id":1,"ip_address":"","name":"hogoekll","pc_name":""}]`)
 
 	b, _ := json.Marshal(res.body)
 	fmt.Println("data: ", string(b))
