@@ -20,16 +20,15 @@ import (
 )
 
 // 例: 202005302307
-func getLogFileName() string g{
+func getLogFileName() string {
 	now := time.Now()
 	return now.Format("200612150405.log")
 }
 
 type LogWriter struct {
-	f *os.File
+	f    *os.File
 	date time.Time
 }
-
 
 func NewLogWriter(filepath string) (*LogWriter, error) {
 	f, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -38,18 +37,18 @@ func NewLogWriter(filepath string) (*LogWriter, error) {
 	}
 	return &LogWriter{f: f, date: time.Now()}, nil
 }
-func (l LogWriter) isLogfileOld() {
+func (l LogWriter) isLogfileOld() bool {
 	ld := l.date
 	y, m, d := time.Now().Date()
 	return y != ld.Year() && m != ld.Month() && d != ld.Day()
 }
 func (l LogWriter) Write(p []byte) (n int, err error) {
 	if l.isLogfileOld() {
-		newFilePath = path.Join(config.LogDirectory, getLogFileName())
+		newFilePath := path.Join(config.LogDirectory, getLogFileName())
 		nlw, err := NewLogWriter(newFilePath)
 		if err != nil {
 			log.Errorf("failed to open log file %s: %s", newFilePath, err.Error())
-			return
+			return 0, err
 		}
 		l = *nlw
 	}
@@ -58,11 +57,13 @@ func (l LogWriter) Write(p []byte) (n int, err error) {
 	return
 }
 func (l LogWriter) Close() {
-	l.f.Close()
+	if l.f != nil {
+		l.f.Close()
+	}
 	return
 }
 
-var defaultLogWriter *LogWriter
+var defaultLogWriter *LogWriter = &LogWriter{}
 
 func init() {
 	var err error
@@ -78,11 +79,11 @@ func main() {
 	runServer()
 }
 
-var a = middleware.BasicAuth
-
 func runServer() {
 	// logger
-	defer defaultLogWriter.Close()
+	defer func() {
+		defaultLogWriter.Close()
+	}()
 
 	// db: 接続
 	db, err := database.Connect(config.SQLType, config.GetConnectionURL(), 5)
