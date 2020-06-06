@@ -63,7 +63,7 @@ func PostUsers(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// input
-	var postData jsonmap
+	var postData = jsonmap{}
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
@@ -91,7 +91,7 @@ func PutUserByID(context *Context, c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
 	}
-	var postData jsonmap
+	var postData = jsonmap{}
 	if err := c.Bind(&postData); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
