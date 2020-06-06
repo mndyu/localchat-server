@@ -3,8 +3,10 @@
 
 ## ドキュメント作成
 ```
+cd <別ディレクトリ>
 npm install create-openapi-repo
 npx create-openapi-repo
+# ../localchat-server/docs/openapi.yaml
 ```
 
 ## client 生成

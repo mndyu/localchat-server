@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
@@ -86,6 +87,13 @@ func ToDecimal(a interface{}) (d decimal.Decimal, err error) {
 	return
 }
 
+func Indirect(a reflect.Value) reflect.Value {
+	if a.Type().Kind() == reflect.Ptr {
+		return a.Elem()
+	}
+	return a
+}
+
 // AssignJSONValue :
 // reflect.Value 同士で値代入
 func AssignJSONValue(a, b reflect.Value) error {
@@ -93,27 +101,52 @@ func AssignJSONValue(a, b reflect.Value) error {
 		return fmt.Errorf("cant set %v", a)
 	}
 
-	switch a.Interface().(type) {
-	case decimal.Decimal:
-		d, err := ToDecimal(b.Interface())
+	ae := Indirect(a)
+	be := Indirect(b)
+	if !be.IsValid() && a.Type().Kind() == reflect.Ptr {
+		// *ptr = nil
+		a.Set(reflect.Zero(a.Type()))
+		return nil
+	}
+	if !ae.IsValid() {
+		ae = reflect.New(a.Type().Elem()).Elem()
+	}
+	if !be.IsValid() {
+		return fmt.Errorf("invalid %v(%v), %v(%v)", a.Type(), a, b.Type(), b)
+	}
+
+	switch ae.Interface().(type) {
+	case time.Time:
+		t, err := time.Parse(time.RFC3339, be.Interface().(string))
 		if err != nil {
 			return err
 		}
-		b = InterfaceToValue(d)
+		be = InterfaceToValue(t)
+	case decimal.Decimal:
+		d, err := ToDecimal(be.Interface())
+		if err != nil {
+			return err
+		}
+		be = InterfaceToValue(d)
 	}
 
-	switch n := b.Interface().(type) {
+	switch n := be.Interface().(type) {
 	case float64:
 		if float64(int(n)) == n {
-			b = InterfaceToValue(int64(n))
+			be = InterfaceToValue(int64(n))
 		}
 	}
 
-	if b.Type().ConvertibleTo(a.Type()) == false {
-		return fmt.Errorf("cant convert %s to %s", b.Type().String(), a.Type().String())
+	if be.Type().ConvertibleTo(ae.Type()) == false {
+		return fmt.Errorf("cant convert %s to %s", be.Type().String(), ae.Type().String())
 	}
-	bv := b.Convert(a.Type())
-	a.Set(bv)
+	bv := be.Convert(ae.Type())
+	ae.Set(bv)
+
+	// assign ptr
+	if a.Type().Kind() == reflect.Ptr && ae.CanAddr() {
+		a.Set(ae.Addr())
+	}
 
 	return nil
 }
