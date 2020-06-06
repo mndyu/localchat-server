@@ -67,9 +67,9 @@ var defaultLogWriter *LogWriter = &LogWriter{}
 
 func init() {
 	var err error
-	defaultLogWriter, err = NewLogWriter(config.LogFile)
+	defaultLogWriter, err = NewLogWriter(config.LogDirectory)
 	if err != nil {
-		log.Errorf("failed to open log file %s: %s", config.LogFile, err.Error())
+		log.Errorf("failed to open log file %s: %s", config.LogDirectory, err.Error())
 		return
 	}
 	log.SetOutput(*defaultLogWriter)
