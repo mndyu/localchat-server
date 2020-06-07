@@ -56,7 +56,7 @@ var (
 // api server
 var (
 	// Address : サーバのアドレス & ポート番号
-	Address      string = replaceIfEmpty(os.Getenv("API_SERVER_ADDRESS"), ":1323")
+	Address      string = replaceIfEmpty(os.Getenv("API_SERVER_ADDRESS"), "0.0.0.0:1323")
 	PublicPrefix string = "/file/"
 )
 

@@ -335,7 +335,8 @@ func SetupRoutes(g *echo.Group, db *gorm.DB) {
 	c := Context{db}
 
 	g.GET("/ping", c.bind(GetPing))
-	// g.POST("/ws", c.bind(PostWs))
+	g.GET("/ws", c.bind(GetWs))
+	g.POST("/ws", c.bind(PostWs))
 	g.POST("/upload", c.bind(PostUpload))
 
 	//

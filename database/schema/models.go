@@ -18,18 +18,20 @@ type Model struct {
 var All = []interface{}{
 	// テスト用
 	Tee{},
-	//
+	// 本体
 	User{},
 	Message{},
 	Group{},
 	Channel{},
 }
 
+// テスト用
 type Tee struct {
 	gorm.Model
 	Name string
 }
 
+// 本体
 type User struct {
 	gorm.Model
 	Name         string     `json:"name"`

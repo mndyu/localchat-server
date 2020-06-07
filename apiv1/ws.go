@@ -10,7 +10,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var upgrader = websocket.Upgrader{}
+// type Notification struct {
+// 	Message string `json:"message"`
+// }
+type Notification interface{}
+type Connection struct {
+	wsConn *websocket.Conn
+	c      notifChan
+}
+type notifChan chan Notification
 
 // global state
 const (
@@ -18,18 +26,10 @@ const (
 )
 
 var (
-	conns  connMap
-	addrs  addrMap
-	notifs notifMap
+	conns  = connMap{v: map[string]Connection{}}
+	addrs  = addrMap{v: map[string]uint{}}
+	notifs = notifMap{v: map[uint][]*Notification{}}
 )
-
-type Notification struct {
-	Message string `json:"message"`
-}
-type Connection struct {
-	wsConn *websocket.Conn
-	c      chan Notification
-}
 
 type connMap struct {
 	v   map[string]Connection // IP address : websocket conn
@@ -44,13 +44,13 @@ type notifMap struct {
 	mux sync.Mutex
 }
 
-func addConn(uid uint, uaddr string, conn *websocket.Conn) chan Notification {
+func addConn(uid uint, uaddr string, conn *websocket.Conn) notifChan {
 	conns.mux.Lock()
 	addrs.mux.Lock()
 	defer conns.mux.Unlock()
 	defer addrs.mux.Unlock()
 
-	c := make(chan Notification, maxQueueLen)
+	c := make(notifChan, maxQueueLen)
 
 	conns.v[uaddr] = Connection{
 		wsConn: conn,
@@ -82,17 +82,29 @@ type resultWS struct {
 	Message string `json:"message"`
 }
 
-func GetWs(context *Context, c echo.Context) error {
+// TODO: fix CheckOrigin function
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+func PostWs(context *Context, c echo.Context) error {
 	user, err := getClientUser(context, c)
+	fmt.Printf("->>>>>> %s\n", c.RealIP())
 	if err != nil {
 		// TODO
 		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("WebSocket connection failed: ", err.Error()))
+		return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("WebSocket connection failed: %s", err.Error()))
 	}
-	sendNotif(user.ID, Notification{Message: "hihihi"})
+	var postData = jsonmap{}
+	if err := c.Bind(&postData); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+
+	// sendNotif(user.ID, Notification{Message: "hihihi"})
+	sendNotif(user.ID, &postData)
 	return c.JSON(http.StatusOK, resultWS{Message: "connection end"})
 }
-func PostWs(context *Context, c echo.Context) error {
+func GetWs(context *Context, c echo.Context) error {
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("WebSocket upgrade failed: ", err.Error()))
@@ -100,10 +112,11 @@ func PostWs(context *Context, c echo.Context) error {
 	defer ws.Close()
 
 	user, err := getClientUser(context, c)
+	fmt.Printf("->>>>>> %s\n", c.RealIP())
 	if err != nil {
 		// TODO
 		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("WebSocket connection failed: ", err.Error()))
+		return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("WebSocket connection failed: %s", err.Error()))
 	}
 	uid := user.ID
 	ip := c.RealIP()
