@@ -1,6 +1,6 @@
 # localchat-server
 
-- Go 1.14
+- Go 1.13
 - Docker
 
 
@@ -19,15 +19,18 @@ docker-compose up
 
 ## env
 ```
+APP_MODE=<production or development>
+API_SERVER_ADDRESS=<サーバのアドレス (`:1324`), host, port 上書き>
+API_SERVER_HOST=<サーバのホスト (`0.0.0.0`)>
+API_SERVER_PORT=<サーバのポート (`1324`)>
+API_SERVER_LOG_DIR=<ログのディレクトリ>
+API_SERVER_SEED_FILE=<seedファイルのパス>
 DB_TYPE=<RDBMS名>
-DB_URL=<接続URL>
+DB_URL=<接続URL (address, database, user, password 上書き)>
 DB_ADDRESS=<DBアドレス>
 DB_DATABASE=<DB名>
 DB_USER=<ユーザ名>
 DB_PASSWORD=<ユーザのパスワード>
-API_SERVER_ADDRESS=<サーバのアドレス (`:1324`)>
-API_SERVER_LOG_DIR=<ログのディレクトリ>
-API_SERVER_SEED_FILE=<seedファイルの場所>
 ```
 
 

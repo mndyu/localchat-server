@@ -116,6 +116,6 @@ func runServer() {
 	apiv1.SetupRoutes(ver, db)
 
 	// echo: start
-	e.Logger.Fatal(e.Start(config.Address))
+	e.Logger.Fatal(e.Start(config.GetServerAddress()))
 
 }
