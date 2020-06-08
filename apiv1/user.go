@@ -10,9 +10,9 @@ import (
 )
 
 type userPostJson struct {
-	Name      string `json:"name"`
-	IPAddress string `json:"ip_address"`
-	PCName    string `json:"pc_name"`
+	Name string `json:"name"`
+	// IPAddress string `json:"ip_address"`
+	PCName string `json:"pc_name"`
 }
 
 type userResultJson struct {
@@ -72,6 +72,7 @@ func PostUsers(context *Context, c echo.Context) error {
 	var newUser schema.User
 	filteredPostData := filterJsonmapWithStruct(postData, userPostJson{})
 	assignJSONFields(&newUser, filteredPostData)
+	newUser.IPAddress = c.RealIP()
 	if err := db.Create(&newUser).Error; err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found: %v", err))
 	}
