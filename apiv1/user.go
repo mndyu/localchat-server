@@ -24,17 +24,17 @@ type userResultJson struct {
 
 // GetProfile GET /profile
 func GetProfile(context *Context, c echo.Context) error {
-	db := context.DB
+	// db := context.DB
 
-	// db
-	var users schema.User
-	if db.Find(&users).Error != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+	// input
+	user, err := getClientUser(context, c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("auth failed for IP address (%s)", c.RealIP()))
 	}
 
 	// output
 	var jsonData userResultJson
-	assignJSONFields(&jsonData, users)
+	assignJSONFields(&jsonData, user)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
