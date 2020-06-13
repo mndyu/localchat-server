@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"testing"
 	"time"
 
@@ -80,11 +81,40 @@ type messageResultJson struct {
 	EditedAt *time.Time `json:"edited_at"`
 }
 
+func TestEachQueryStructField(t *testing.T) {
+	a := uint(9982)
+	te := time.Now()
+	u := messageResultJson{
+		123,
+		struct {
+			ID        uint   `json:"id" gorm:"primary_key"`
+			Name      string `json:"name"`
+			IPAddress string `json:"ip_address"`
+			PCName    string `json:"pc_name"`
+		}{333, "ji", "ddd", "apap"},
+		&a,
+		1323,
+		"esofse",
+		time.Now(),
+		&te,
+	}
+	fields := []reflect.Value{}
+	EachQueryStructField(&u, func(jsonFieldName string, val reflect.Value, field reflect.StructField) {
+		fields = append(fields, val)
+		// val.Set(reflect.Zero(field.Type))
+	})
+	for i, f := range fields {
+		fmt.Println(i, f, f.Type())
+	}
+	fmt.Println(u)
+	t.Error(0)
+}
+
 func TestGetTypedColumns(t *testing.T) {
 	u := []messageResultJson{}
 	var columns []interface{}
 	GetTypedColumns(&u, &columns, nil)
-	t.Error(columns)
+	// t.Error(columns)
 }
 
 func TestCreateOrUpdateRow(t *testing.T) {

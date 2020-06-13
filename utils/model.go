@@ -141,6 +141,23 @@ func ParseGormTagSetting(tags reflect.StructTag) map[string]string {
 	return setting
 }
 
+func GetQueryStructValues(a interface{}) []reflect.Value {
+	fields := []reflect.Value{}
+	EachQueryStructField(a, func(jsonFieldName string, val reflect.Value, field reflect.StructField) {
+		fields = append(fields, val)
+	})
+	return fields
+}
+func EachQueryStructField(a interface{}, f func(jsonFieldName string, val reflect.Value, field reflect.StructField)) {
+	EachSchemaField(a, func(jsonFieldName string, val reflect.Value, field reflect.StructField) {
+		if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
+			EachQueryStructField(val, f)
+			return
+		}
+		f(jsonFieldName, val, field)
+	})
+}
+
 // MapRows : sql.Rows を struct にマップ
 // parentArray: *[]struct{}
 func MapRows(parentArray interface{}, rows *sql.Rows) error {
@@ -268,6 +285,7 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 	for i, name := range schemaFields {
 		field := emptyChild.FieldByName(name)
 		val := reflect.ValueOf(schemaColumns[i])
+		fmt.Println(field, name)
 
 		if !val.IsValid() || val.IsZero() {
 			// fmt.Println("nulalallalae", field.Type())
