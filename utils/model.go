@@ -195,11 +195,11 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 
 	var (
 		columnFields  []string
-		schemaFields  []string
+		schemaFields  []int
 		schemaColumns []interface{}
-		keyFields     []string
+		keyFields     []int
 		keyColumns    []interface{}
-		childFields   []string
+		childFields   []int
 	)
 
 	var columnNum = 0
@@ -229,10 +229,10 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 
 		tag := ParseGormTagSetting(field.Tag)
 		if tag["PRIMARY_KEY"] != "" {
-			keyFields = append(keyFields, field.Name)
+			keyFields = append(keyFields, columnNum)
 			keyColumns = append(keyColumns, column)
 		} else if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
-			childFields = append(childFields, field.Name)
+			childFields = append(childFields, columnNum)
 			return
 		}
 
@@ -242,7 +242,7 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 		}
 		columnFields = append(columnFields, columnName)
 
-		schemaFields = append(schemaFields, field.Name)
+		schemaFields = append(schemaFields, columnNum)
 		schemaColumns = append(schemaColumns, column)
 
 		columnNum++
@@ -262,8 +262,9 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 		item := parentArrayValue.Index(i)
 
 		found := true
-		for ki, fieldName := range keyFields {
-			kfv := item.FieldByName(fieldName)
+		values := GetQueryStructValues(item)
+		for ki, fieldNum := range keyFields {
+			kfv := values[fieldNum]
 			kf := kfv.Interface()
 			ks := Convert(keyColumns[ki], kfv.Type())
 			if !cmp.Equal(kf, ks) {
@@ -282,17 +283,18 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 	// 変換
 	var isNull = true
 	var convertedColumns = make([]interface{}, len(schemaFields))
-	for i, name := range schemaFields {
-		field := emptyChild.FieldByName(name)
+	values := GetQueryStructValues(emptyChild)
+	for i, num := range schemaFields {
+		field := values[num]
 		val := reflect.ValueOf(schemaColumns[i])
-		fmt.Println(field, name)
+		fmt.Println(field, num)
 
 		if !val.IsValid() || val.IsZero() {
 			// fmt.Println("nulalallalae", field.Type())
 		} else {
 			converted := Convert(val.Interface(), field.Type())
 			if converted == nil {
-				return false, fmt.Errorf("Field type mismatch: field %s -> %v (%v) != row -> %v (%v)", name, field, field.Type(), val, val.Type())
+				return false, fmt.Errorf("Field type mismatch: field %s -> %v (%v) != row -> %v (%v)", num, field, field.Type(), val, val.Type())
 			}
 			convertedColumns[i] = converted
 			isNull = false
@@ -307,16 +309,18 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 			parentArrayValue.Set(newArray)
 			newRow = parentArrayValue.Index(parentArrayValue.Len() - 1)
 		}
-		for i, name := range schemaFields {
-			field := newRow.FieldByName(name)
+		values := GetQueryStructValues(newRow)
+		for i, num := range schemaFields {
+			field := values[num]
 			if convertedColumns[i] != nil {
 				field.Set(reflect.ValueOf(convertedColumns[i]))
 			}
 		}
 	}
 
+	newRowValues := GetQueryStructValues(newRow)
 	for _, cf := range childFields {
-		f := newRow.FieldByName(cf)
+		f := newRowValues[cf]
 		CreateOrUpdateMappedRow(f, row, columnNames, offset)
 	}
 
@@ -360,7 +364,7 @@ func GetTypedColumns(parentArray interface{}, columns *[]interface{}, offset *in
 		parentArrayValue = reflect.ValueOf(parentArray).Elem() // pointer indirect
 	}
 	var childType = parentArrayValue.Type().Elem()
-	var childFields []string
+	var childFields []int
 
 	var columnNum = 0
 	if offset == nil {
@@ -372,7 +376,7 @@ func GetTypedColumns(parentArray interface{}, columns *[]interface{}, offset *in
 	EachSchemaField(emptyChild, func(jsonFieldName string, val reflect.Value, field reflect.StructField) {
 		fmt.Println(field.Name)
 		if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
-			childFields = append(childFields, field.Name)
+			childFields = append(childFields, columnNum)
 			return
 		}
 		newColumn := reflect.New(field.Type).Interface()
@@ -381,8 +385,9 @@ func GetTypedColumns(parentArray interface{}, columns *[]interface{}, offset *in
 		columnNum++
 	})
 
+	values := GetQueryStructValues(emptyChild)
 	for _, cf := range childFields {
-		f := emptyChild.FieldByName(cf)
+		f := values[cf]
 		GetTypedColumns(f, columns, offset)
 	}
 
