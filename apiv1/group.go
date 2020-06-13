@@ -214,7 +214,7 @@ func GetGroupMembers(context *Context, c echo.Context) error {
 
 	// output
 	var jsonData []userResultJson
-	assignJSONFields(&jsonData, members)
+	assignJSONArrayFields(&jsonData, members)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
