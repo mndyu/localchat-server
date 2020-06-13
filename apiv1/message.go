@@ -89,12 +89,14 @@ func PostMessages(context *Context, c echo.Context) error {
 	// if err != nil {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
 	// }
+
 	var us schema.User
 	db.Model(newItem).Related(&us, "Author")
 
 	var jsonData messageResultJson
 	assignJSONFields(&jsonData, newItem)
 	assignJSONFields(&jsonData.User, us)
+
 	return c.JSON(http.StatusOK, jsonData)
 }
 
