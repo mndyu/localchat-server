@@ -9,6 +9,7 @@ import (
 	"github.com/mndyu/localchat-server/apiv1"
 	"github.com/mndyu/localchat-server/config"
 	"github.com/mndyu/localchat-server/database"
+	"github.com/mndyu/localchat-server/database/schema"
 
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -94,6 +95,15 @@ func runServer() {
 
 	// db: 初期化
 	database.SetupDatabase(db)
+
+	// TODO: 後で消す
+	group := schema.Group{}
+	group.ID = 1
+	group.Name = "default"
+	err = db.Create(&group).Error
+	if err != nil {
+		panic(err)
+	}
 
 	// echo
 	e := echo.New()
