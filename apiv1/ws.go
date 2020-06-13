@@ -102,12 +102,12 @@ func PostWs(context *Context, c echo.Context) error {
 
 	// sendNotif(user.ID, Notification{Message: "hihihi"})
 	sendNotif(user.ID, &postData)
-	return c.JSON(http.StatusOK, resultWS{Message: "connection end"})
+	return c.JSON(http.StatusOK, resultWS{Message: "sent"})
 }
 func GetWs(context *Context, c echo.Context) error {
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("WebSocket upgrade failed: ", err.Error()))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("WebSocket upgrade failed: %s", err.Error()))
 	}
 	defer ws.Close()
 
