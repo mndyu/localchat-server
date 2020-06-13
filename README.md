@@ -17,6 +17,12 @@ docker-compose up
 ```
 
 
+### Postgres
+```
+docker exec -ti postgres-1 psql localchat postgres
+```
+
+
 ## env
 ```
 APP_MODE=<production or development>
@@ -50,6 +56,31 @@ DB_PASSWORD=<ユーザのパスワード>
 ```
 curl \
   -X GET \
-  http://localhost:1324/api/v1/users
+  http://localhost:18000/api/v1/users
+
+curl \
+  -X GET \
+  http://localhost:18000/api/v1/messages
+
+curl \
+  -X GET \
+  http://localhost:18000/api/v1/users/1/groups
+
+curl \
+  -X GET \
+  http://localhost:18000/api/v1/groups/1/members
+
+curl \
+  -X POST \
+  http://localhost:18000/api/v1/users \
+  -H 'Content-Type: application/json' \
+  -d '{"ip_address": "::1", "name": "dade", "pc_name": "oeoe"}'
+
+curl \
+  -X POST \
+  http://localhost:18000/api/v1/messages \
+  -H 'Content-Type: application/json' \
+  -d '{"group_id": 1, "body": "heheheue", "to": [1,2,3]}'
+
 
 ```

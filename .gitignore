@@ -5,6 +5,8 @@
 # data directory
 /data
 
+# postgres
+/postgres/pgdata
 
 # mac
 .DS_Store
