@@ -154,3 +154,28 @@ func GetWs(context *Context, c echo.Context) error {
 
 	return c.JSON(http.StatusOK, resultWS{Message: "connection end"})
 }
+
+func GetWsEcho(context *Context, c echo.Context) error {
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("WebSocket upgrade failed: %s", err.Error()))
+	}
+	defer ws.Close()
+
+	log.Infof("ws connection: %s", c.RealIP())
+
+	for {
+		// Read
+		msgType, msg, err := ws.ReadMessage()
+		if err != nil {
+			c.Logger().Error(err)
+		}
+		fmt.Printf("%s\n", msg)
+		err = ws.WriteMessage(msgType, msg)
+		if err != nil {
+			c.Logger().Error(err)
+		}
+	}
+
+	return c.JSON(http.StatusOK, resultWS{Message: "connection end"})
+}
