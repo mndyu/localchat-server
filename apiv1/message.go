@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/mndyu/localchat-server/database/schema"
+	"github.com/mndyu/localchat-server/utils"
 )
 
 type messagePostJson struct {
@@ -17,13 +18,13 @@ type messagePostJson struct {
 }
 
 type messageResultJson struct {
-	ID   uint `json:"id" gorm:"primary_key"`
-	User struct {
+	ID     uint `json:"id" gorm:"primary_key"`
+	Author struct {
 		ID        uint   `json:"id" gorm:"primary_key"`
 		Name      string `json:"name"`
 		IPAddress string `json:"ip_address"`
 		PCName    string `json:"pc_name"`
-	} `json:"user"`
+	} `json:"author"`
 	ThreadID *uint      `json:"thread"`
 	GroupID  uint       `json:"group_id"`
 	Body     string     `json:"body"`
@@ -89,13 +90,17 @@ func PostMessages(context *Context, c echo.Context) error {
 	// if err != nil {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
 	// }
+	// if len(jsonData) != 1 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
+	// }
+	// return c.JSON(http.StatusOK, jsonData[0])
 
 	var us schema.User
 	db.Model(newItem).Related(&us, "Author")
 
 	var jsonData messageResultJson
 	assignJSONFields(&jsonData, newItem)
-	assignJSONFields(&jsonData.User, us)
+	assignJSONFields(&jsonData.Author, us)
 
 	return c.JSON(http.StatusOK, jsonData)
 }
@@ -105,18 +110,31 @@ func GetMessages(context *Context, c echo.Context) error {
 	db := context.DB
 
 	// input
-	limit := getLimit(c)
-	offset := getOffset(c)
+	// limit := getLimit(c)
+	// offset := getOffset(c)
 
 	// db
-	var msgs []schema.Message
-	if db.Limit(limit).Offset(offset).Find(&msgs).Error != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "message not found")
+	// var msgs []schema.Message
+	// if db.Limit(limit).Offset(offset).Find(&msgs).Error != nil {
+	// 	return echo.NewHTTPError(http.StatusNotFound, "message not found")
+	// }
+
+	rows, err := db.Model(schema.Message{}).
+		Joins("join user on message.author_id = user.id").
+		Select("message.id, user.id, user.name, user.ip_address, user.pc_name, message.thread_id, message.group_id, message.body, message.sent_at, message.edited_at").
+		Rows()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
+	}
+	var jsonData = []messageResultJson{}
+	err = utils.MapRows(&jsonData, rows)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
 	}
 
 	// output
-	jsonData := []messageResultJson{}
-	assignJSONArrayFields(&jsonData, msgs)
+	// jsonData := []messageResultJson{}
+	// assignJSONArrayFields(&jsonData, msgs)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -137,8 +155,12 @@ func GetMessageByID(context *Context, c echo.Context) error {
 	}
 
 	// output
+	var us schema.User
+	db.Model(msg).Related(&us, "Author")
+
 	var jsonData messageResultJson
 	assignJSONFields(&jsonData, msg)
+	assignJSONFields(&jsonData.Author, us)
 	return c.JSON(http.StatusOK, jsonData)
 }
 
@@ -199,7 +221,11 @@ func DeleteMessageByID(context *Context, c echo.Context) error {
 	}
 
 	// output
+	var us schema.User
+	db.Model(msg).Related(&us, "Author")
+
 	var jsonData messageResultJson
 	assignJSONFields(&jsonData, msg)
+	assignJSONFields(&jsonData.Author, us)
 	return c.JSON(http.StatusOK, jsonData)
 }
