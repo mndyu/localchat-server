@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jinzhu/gorm"
@@ -62,6 +63,28 @@ func printJSON(a interface{}) {
 		return
 	}
 	fmt.Println(string(b))
+}
+
+type messageResultJson struct {
+	ID   uint `json:"id" gorm:"primary_key"`
+	User struct {
+		ID        uint   `json:"id" gorm:"primary_key"`
+		Name      string `json:"name"`
+		IPAddress string `json:"ip_address"`
+		PCName    string `json:"pc_name"`
+	} `json:"user"`
+	ThreadID *uint      `json:"thread"`
+	GroupID  uint       `json:"group_id"`
+	Body     string     `json:"body"`
+	SentAt   time.Time  `json:"sent_at"`
+	EditedAt *time.Time `json:"edited_at"`
+}
+
+func TestGetTypedColumns(t *testing.T) {
+	u := []messageResultJson{}
+	var columns []interface{}
+	GetTypedColumns(&u, &columns, nil)
+	t.Error(columns)
 }
 
 func TestCreateOrUpdateRow(t *testing.T) {

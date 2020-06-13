@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/shopspring/decimal"
 )
 
 type Jsonmap map[string]interface{}
@@ -73,6 +75,21 @@ func FilterJsonmapWithStruct(jm Jsonmap, i interface{}) Jsonmap {
 	return newMap
 }
 
+func isNormalStruct(v reflect.Value) bool {
+	k := v.Type().Kind()
+	if k != reflect.Struct {
+		return false
+	}
+	i := v.Interface()
+	if _, ok := i.(time.Time); ok {
+		return false
+	}
+	if _, ok := i.(decimal.Decimal); ok {
+		return false
+	}
+	return true
+}
+
 func EachSchemaField(a interface{}, f func(jsonFieldName string, val reflect.Value, field reflect.StructField)) {
 	var uv reflect.Value
 	if v, ok := a.(reflect.Value); ok {
@@ -88,7 +105,7 @@ func EachSchemaField(a interface{}, f func(jsonFieldName string, val reflect.Val
 	for i := 0; i < ut.NumField(); i++ {
 		uf := ut.Field(i)
 		ufv := uv.Field(i)
-		if uf.Anonymous {
+		if uf.Anonymous || isNormalStruct(ufv) {
 			EachSchemaField(ufv, f)
 			continue
 		}
@@ -335,8 +352,8 @@ func GetTypedColumns(parentArray interface{}, columns *[]interface{}, offset *in
 
 	var emptyChild = reflect.New(childType).Elem()
 	EachSchemaField(emptyChild, func(jsonFieldName string, val reflect.Value, field reflect.StructField) {
-		tag := ParseGormTagSetting(field.Tag)
-		if tag["PRIMARY_KEY"] == "" && field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
+		fmt.Println(field.Name)
+		if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
 			childFields = append(childFields, field.Name)
 			return
 		}
