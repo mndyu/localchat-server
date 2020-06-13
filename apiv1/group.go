@@ -17,8 +17,8 @@ type groupResultJson struct {
 	Name string `json:"name"`
 }
 type groupMemberPostJson struct {
-	UserID uint `json:"user_id"`
-	Myself bool `json:"myself"`
+	AuthorID uint `json:"user_id"`
+	Myself   bool `json:"myself"`
 }
 
 // PostGroups POST /groups
@@ -175,11 +175,11 @@ func PostGroupMembers(context *Context, c echo.Context) error {
 		}
 		userID = clientUser.ID
 	} else {
-		userID = postData.UserID
+		userID = postData.AuthorID
 	}
 	var newMember schema.User
 	if err := db.First(&newMember, userID).Error; err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found: %d, %v", postData.UserID, postData.Myself))
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("user not found: %d, %v", postData.AuthorID, postData.Myself))
 	}
 	item.Members = append(item.Members, &newMember)
 	if err := db.Save(&item).Error; err != nil {
@@ -353,9 +353,9 @@ func PostGroupMessages(context *Context, c echo.Context) error {
 		channel.Messages = []schema.Message{}
 	}
 	newMessage := schema.Message{
-		Text:      postData.Text,
-		ChannelID: channel.ID,
-		UserID:    clientUser.ID,
+		Body:      postData.Body,
+		ChannelID: &channel.ID,
+		AuthorID:  clientUser.ID,
 	}
 	channel.Messages = append(channel.Messages, newMessage)
 	if err := db.Save(&channel).Error; err != nil {

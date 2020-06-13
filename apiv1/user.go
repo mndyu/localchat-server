@@ -16,7 +16,7 @@ type userPostJson struct {
 }
 
 type userResultJson struct {
-	ID        uint   `json:"id"`
+	ID        uint   `json:"id" gorm:"primary_key"`
 	Name      string `json:"name"`
 	IPAddress string `json:"ip_address"`
 	PCName    string `json:"pc_name"`
