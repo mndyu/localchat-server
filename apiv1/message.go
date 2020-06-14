@@ -30,6 +30,7 @@ type messageResultJson struct {
 	Body     string     `json:"body"`
 	SentAt   time.Time  `json:"sent_at"`
 	EditedAt *time.Time `json:"edited_at"`
+	To       []uint     `json:"to"`
 }
 
 // PostMessages POST /messages
@@ -78,31 +79,34 @@ func PostMessages(context *Context, c echo.Context) error {
 	}
 
 	// output
-	// rows, err := db.Model(schema.Message{}).
-	// 	Joins("join user on message.author_id = user.id").
-	// 	Select("message.id, user.id, user.name, user.ip_address, user.pc_name, message.thread_id, message.group_id, message.body, message.sent_at, message.edited_at").
-	// 	Rows()
-	// if err != nil {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
-	// }
-	// var jsonData = []messageResultJson{}
-	// err = utils.MapRows(&jsonData, rows)
-	// if err != nil {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
-	// }
-	// if len(jsonData) != 1 {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
-	// }
-	// return c.JSON(http.StatusOK, jsonData[0])
+	rows, err := db.Model(schema.Message{}).
+		Joins("join user on user.id = message.author_id").
+		Joins("join message_users on message_users.message_id = message.id").
+		Select("message.id, user.id, user.name, user.ip_address, user.pc_name, message.thread_id, message.group_id, message.body, message.sent_at, message.edited_at, message_users.user_id").
+		Where("message.id = ?", newItem.ID).
+		Rows()
 
-	var us schema.User
-	db.Model(newItem).Related(&us, "Author")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
+	}
+	var jsonData = []messageResultJson{}
+	err = utils.MapRows(&jsonData, rows)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
+	}
+	if len(jsonData) != 1 {
+		return c.JSON(http.StatusOK, jsonData)
+		// return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid len: %d", len(jsonData)))
+	}
+	return c.JSON(http.StatusOK, jsonData[0])
 
-	var jsonData messageResultJson
-	assignJSONFields(&jsonData, newItem)
-	assignJSONFields(&jsonData.Author, us)
+	// var us schema.User
+	// db.Model(newItem).Related(&us, "Author")
 
-	return c.JSON(http.StatusOK, jsonData)
+	// var jsonData messageResultJson
+	// assignJSONFields(&jsonData, newItem)
+	// assignJSONFields(&jsonData.Author, us)
+	// return c.JSON(http.StatusOK, jsonData)
 }
 
 // GetMessages GET /messages
@@ -120,8 +124,9 @@ func GetMessages(context *Context, c echo.Context) error {
 	// }
 
 	rows, err := db.Model(schema.Message{}).
-		Joins("join user on message.author_id = user.id").
-		Select("message.id, user.id, user.name, user.ip_address, user.pc_name, message.thread_id, message.group_id, message.body, message.sent_at, message.edited_at").
+		Joins("join user on user.id = message.author_id").
+		Joins("join message_users on message_users.message_id = message.id").
+		Select("message.id, user.id, user.name, user.ip_address, user.pc_name, message.thread_id, message.group_id, message.body, message.sent_at, message.edited_at, message_users.user_id").
 		Rows()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
@@ -148,20 +153,26 @@ func GetMessageByID(context *Context, c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
 	}
 
-	// db
-	var msg schema.Message
-	if err := db.Find(&msg, id).Error; err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	// db & output
+	rows, err := db.Model(schema.Message{}).
+		Joins("join user on user.id = message.author_id").
+		Joins("join message_users on message_users.message_id = message.id").
+		Select("message.id, user.id, user.name, user.ip_address, user.pc_name, message.thread_id, message.group_id, message.body, message.sent_at, message.edited_at, message_users.user_id").
+		Where("message.id = ?", id).
+		Rows()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
 	}
-
-	// output
-	var us schema.User
-	db.Model(msg).Related(&us, "Author")
-
-	var jsonData messageResultJson
-	assignJSONFields(&jsonData, msg)
-	assignJSONFields(&jsonData.Author, us)
-	return c.JSON(http.StatusOK, jsonData)
+	var jsonData = []messageResultJson{}
+	err = utils.MapRows(&jsonData, rows)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
+	}
+	if len(jsonData) != 1 {
+		return c.JSON(http.StatusOK, jsonData)
+		// return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid len: %d", len(jsonData)))
+	}
+	return c.JSON(http.StatusOK, jsonData[0])
 }
 
 // PutMessageByID PUT /messages/:id
