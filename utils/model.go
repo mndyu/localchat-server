@@ -97,10 +97,13 @@ func EachSchemaField(a interface{}, f func(jsonFieldName string, val reflect.Val
 	} else {
 		uv = reflect.ValueOf(a)
 	}
-	if uv.Type().Kind() == reflect.Ptr || uv.Type().Kind() == reflect.Slice || uv.Type().Kind() == reflect.Array {
+	if uv.Type().Kind() == reflect.Ptr {
 		uv = uv.Elem()
 	}
 	ut := uv.Type()
+	// if ut.Kind() == reflect.Slice || ut.Kind() == reflect.Array {
+	// 	ut = ut.Elem()
+	// }
 
 	for i := 0; i < ut.NumField(); i++ {
 		uf := ut.Field(i)
@@ -151,6 +154,10 @@ func GetQueryStructValues(a interface{}) []reflect.Value {
 func EachQueryStructField(a interface{}, f func(jsonFieldName string, val reflect.Value, field reflect.StructField)) {
 	EachSchemaField(a, func(jsonFieldName string, val reflect.Value, field reflect.StructField) {
 		if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
+			if field.Type.Elem().Kind() != reflect.Struct {
+				f(jsonFieldName, val, field)
+				return
+			}
 			EachQueryStructField(val, f)
 			return
 		}
@@ -208,6 +215,8 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 	}
 	columnNum = *offset
 
+	fmt.Println(">>", *offset, ":", childType)
+
 	// field & column が一致しているか確かめる
 	if columnNum == 0 {
 		// TODO
@@ -218,6 +227,13 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 		if !cmp.Equal(allFields, row) {
 			// return false, fmt.Errorf("Field name mismatch: field (%v) != row (%v)", allFields, row)
 		}
+	}
+
+	if childType.Kind() != reflect.Struct {
+		v := row[columnNum]
+		parentArrayValue.Set(reflect.Append(parentArrayValue, reflect.ValueOf(v)))
+		fmt.Println("appendd", parentArrayValue, v)
+		return true, nil
 	}
 
 	var emptyChild = reflect.New(childType).Elem()
@@ -233,6 +249,7 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 			keyColumns = append(keyColumns, column)
 		} else if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
 			childFields = append(childFields, columnNum)
+			fmt.Println("child:", field.Name)
 			return
 		}
 
@@ -321,6 +338,7 @@ func CreateOrUpdateMappedRow(parentArray interface{}, row []interface{}, columnN
 	newRowValues := GetQueryStructValues(newRow)
 	for _, cf := range childFields {
 		f := newRowValues[cf]
+		fmt.Println("child val", row[cf])
 		CreateOrUpdateMappedRow(f, row, columnNames, offset)
 	}
 
@@ -372,6 +390,12 @@ func GetTypedColumns(parentArray interface{}, columns *[]interface{}, offset *in
 	}
 	columnNum = *offset
 
+	if childType.Kind() != reflect.Struct {
+		newColumn := reflect.New(childType).Interface()
+		(*columns) = append(*columns, newColumn)
+		return nil
+	}
+
 	var emptyChild = reflect.New(childType).Elem()
 	EachSchemaField(emptyChild, func(jsonFieldName string, val reflect.Value, field reflect.StructField) {
 		fmt.Println(field.Name)
@@ -385,6 +409,8 @@ func GetTypedColumns(parentArray interface{}, columns *[]interface{}, offset *in
 		columnNum++
 	})
 
+	fmt.Println(emptyChild)
+	fmt.Println(emptyChild.Type())
 	values := GetQueryStructValues(emptyChild)
 	for _, cf := range childFields {
 		f := values[cf]
