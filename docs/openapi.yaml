@@ -9,7 +9,7 @@ info:
 paths:
   /ping:
     get:
-      summary: Ping, 生存確認
+      summary: Ping (生存確認)
       responses:
         "200":
           description: 時間情報
@@ -65,7 +65,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
     post:
-      summary: ユーザ
+      summary: ユーザ作成
       requestBody:
         required: true
         content:
@@ -83,7 +83,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/UserId"
     get:
-      summary: １ユーザ取得
+      summary: ユーザ取得 (ID)
       responses:
         "200":
           description: ユーザ返信
@@ -92,7 +92,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
     put:
-      summary: １ユーザ更新
+      summary: ユーザ更新 (ID)
       requestBody:
         required: true
         content:
@@ -107,7 +107,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
     delete:
-      summary: １ユーザ削除
+      summary: ユーザ削除 (ID)
       responses:
         "200":
           description: ユーザ返信
@@ -136,7 +136,7 @@ paths:
       summary: ？？
       responses:
         "200":
-          description: ユーザ返信
+          description: ユーザのグループ一覧取得
           content:
             application/json:
               schema:
@@ -145,7 +145,7 @@ paths:
                   $ref: "#/components/schemas/User"
   /messages:
     post:
-      summary: メッセージの作成
+      summary: メッセージ作成
       requestBody:
         required: true
         content:
@@ -174,7 +174,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/MessageId"
     get:
-      summary: メッセージの取得
+      summary: メッセージの取得 (ID)
       responses:
         "200":
           description: ユーザ返信
@@ -183,7 +183,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Message"
     put:
-      summary: メッセージの更新
+      summary: メッセージの更新 (ID)
       requestBody:
         required: true
         content:
@@ -198,7 +198,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Message"
     delete:
-      summary: メッセージの削除
+      summary: メッセージの削除 (ID)
       responses:
         "200":
           description: ユーザ返信
@@ -237,7 +237,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/GroupId"
     get:
-      summary: グループ取得
+      summary: グループ取得 (ID)
       responses:
         "200":
           description: ユーザ返信
@@ -246,7 +246,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Group"
     put:
-      summary: グループ更新
+      summary: グループ更新 (ID)
       requestBody:
         required: true
         content:
@@ -261,7 +261,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Group"
     delete:
-      summary: グループ削除
+      summary: グループ削除 (ID)
       responses:
         "200":
           description: ユーザ返信
@@ -311,9 +311,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+  /groups/{group_id}/members/{user_id}/messages:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+      - $ref: "#/components/parameters/UserId"
+    get:
+      summary: group の user のメッセージ一覧
+      responses:
+        "200":
+          description: メッセージ一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
   /groups/{group_id}/messages:
     parameters:
       - $ref: "#/components/parameters/GroupId"
+    get:
+      summary: group の メッセージ一送信
+      responses:
+        "200":
+          description: メッセージ一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
     post:
       summary: group のメッセージ一送信
       requestBody:
@@ -425,16 +451,36 @@ components:
         author:
           type: integer
           format: int32
-        channel:
+        to:
+          type: array
+          items:
+            type: integer
+            format: int32
+        read:
+          type: array
+          items:
+            type: boolean
+        group:
           type: integer
           format: int32
-        text:
+        body:
+          type: integer
+          format: int32
+        thread_id:
           type: integer
           format: int32
     MessagePost:
       type: object
       properties:
-        text:
+        group_id:
+          type: integer
+          format: int32
+        to:
+          type: array
+          items:
+            type: integer
+            format: int32
+        body:
           type: string
     Group:
       type: object
