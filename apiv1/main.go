@@ -366,6 +366,7 @@ func SetupRoutes(g *echo.Group, db *gorm.DB) {
 	g.POST("/groups/:id/members", c.bind(PostGroupMembers))
 	g.GET("/groups/:id/members", c.bind(GetGroupMembers))
 	g.DELETE("/groups/:id/members/:user_id", c.bind(DeleteGroupMemberByID))
+	g.GET("/groups/:id/members/:user_id/messages", c.bind(GetGroupMemberMessages))
 	g.GET("/groups/:id/channels", c.bind(GetGroupChannels))
 	g.DELETE("/groups/:id/channels/:channel_id", c.bind(DeleteGroupChannelByID))
 	g.POST("/groups/:id/messages", c.bind(PostGroupMessages))

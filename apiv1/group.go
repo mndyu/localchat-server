@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/mndyu/localchat-server/database/schema"
+	"github.com/mndyu/localchat-server/utils"
 )
 
 type groupPostJson struct {
@@ -365,5 +366,47 @@ func PostGroupMessages(context *Context, c echo.Context) error {
 	// output
 	var jsonData messageResultJson
 	assignJSONFields(&jsonData, newMessage)
+	return c.JSON(http.StatusOK, jsonData)
+}
+
+func GetGroupMemberMessages(context *Context, c echo.Context) error {
+	db := context.DB
+
+	// input
+	// limit := getLimit(c)
+	// offset := getOffset(c)
+	groupID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+	userID, err := strconv.Atoi(c.Param("user_id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid id: %s", c.Param("id")))
+	}
+
+	// db
+	// var msgs []schema.Message
+	// if db.Limit(limit).Offset(offset).Find(&msgs).Error != nil {
+	// 	return echo.NewHTTPError(http.StatusNotFound, "message not found")
+	// }
+
+	rows, err := db.Model(schema.Message{}).
+		Joins("join user on user.id = message.author_id").
+		Joins("join message_users on message_users.message_id = message.id").
+		Select("message.id, user.id, user.name, user.ip_address, user.pc_name, message.thread_id, message.group_id, message.body, message.sent_at, message.edited_at, message_users.user_id").
+		Where("message.group_id = ? AND user.id = ?", groupID, userID).
+		Rows()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
+	}
+	var jsonData = []messageResultJson{}
+	err = utils.MapRows(&jsonData, rows)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid request params: %s", err.Error()))
+	}
+
+	// output
+	// jsonData := []messageResultJson{}
+	// assignJSONArrayFields(&jsonData, msgs)
 	return c.JSON(http.StatusOK, jsonData)
 }
