@@ -54,21 +54,6 @@ DB_PASSWORD=<ユーザのパスワード>
 ------------------------------------------------------------------------
 ## curl
 ```
-curl \
-  -X GET \
-  http://localhost:18000/api/v1/users
-
-curl \
-  -X GET \
-  http://localhost:18000/api/v1/messages
-
-curl \
-  -X GET \
-  http://localhost:18000/api/v1/users/1/groups
-
-curl \
-  -X GET \
-  http://localhost:18000/api/v1/groups/1/members
 
 curl \
   -X POST \
@@ -78,9 +63,35 @@ curl \
 
 curl \
   -X POST \
+  http://localhost:18000/api/v1/groups \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "huehue"}'
+
+curl \
+  -X POST \
+  http://localhost:18000/api/v1/groups/1/members \
+  -H 'Content-Type: application/json' \
+  -d '{"mysqlf": true, "user_id": 1}'
+
+curl \
+  -X POST \
   http://localhost:18000/api/v1/messages \
   -H 'Content-Type: application/json' \
   -d '{"group_id": 1, "body": "heheheue", "to": [1,2,3]}'
+
+
+
+curl -X GET http://localhost:18000/api/v1/users
+curl -X GET http://localhost:18000/api/v1/users/1/groups
+
+curl -X GET http://localhost:18000/api/v1/messages
+
+curl -X GET http://localhost:18000/api/v1/groups
+curl -X GET http://localhost:18000/api/v1/groups/1/messages
+curl -X GET http://localhost:18000/api/v1/groups/1/members
+curl -X GET http://localhost:18000/api/v1/groups/1/members/1/messages
+
+curl -X DELETE http://localhost:18000/api/v1/messages/1
 
 
 ```
